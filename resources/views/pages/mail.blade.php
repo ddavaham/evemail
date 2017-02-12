@@ -39,9 +39,13 @@
                             </td>
                             <td>
 
-                                @foreach ($mail_recipients as $recipient)
-                                    <strong>{{ $recipient['recipient_name'] }} </strong>
-                                @endforeach
+                                @if(Session::has('recipients'))
+                                    @foreach (Session::get('recipients') as $recipient)
+                                        <button type="button" class="btn btn-default">{{ $recipient['recipient_name'] }}</button>
+                                    @endforeach
+                                @else
+                                    <strong>Unable to Parse Recipients at this time</strong>
+                                @endif
                             </td>
                         </tr>
                         <tr>
@@ -63,7 +67,7 @@
                                 <a href="{{ route('mail.unread', ['mail_id' => $header->mail_id]) }}" class="btn btn-info btn-block">Mark This Message Unread</a>
                             </div>
                             <div class="col-md-4">
-                                <a href="#" class="btn btn-primary btn-block">Reply To This Message</a>
+                                <a href="{{ route('mail.reply', ['step_id' => 1, 'mail_id' => $header->mail_id]) }}" class="btn btn-primary btn-block">Reply To This Message</a>
                             </div>
                             <div class="col-md-4">
                                 <!-- <a href="#" class="btn btn-danger btn-block">Delete This Message</a> -->

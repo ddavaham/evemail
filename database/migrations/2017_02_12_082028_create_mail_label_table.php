@@ -14,15 +14,13 @@ class CreateMailLabelTable extends Migration
     public function up()
     {
         Schema::create('mail_label', function (Blueprint $table) {
-            $table->increments('id');
-            $table->integer('character_id');
+            $table->bigInteger('character_id');
             $table->integer('label_id');
             $table->string('label_name');
-            
-            $table->integer('label_unread_count')->nullable();
+            $table->int('label_unread_count');
             $table->timestamps();
 
-            $table->primary(['character_id', 'mail_id']);
+            $table->primary(['character_id', 'label_id']);
         });
     }
 

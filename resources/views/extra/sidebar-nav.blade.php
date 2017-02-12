@@ -25,13 +25,13 @@
             </a>
         @endforeach
     </div>
-    <h4>Mailing Lists</h4>
+    <h4>Mailing Lists (Coming Soon)</h4>
     <div class="list-group">
         @if (count($mailing_lists)>0)
             @foreach ($mailing_lists as $list)
                 <a href="" class="list-group-item">
 
-                    {{ $list->mailing_list_name }}
+                    {{ $list->recipient_name }}
 
                 </a>
             @endforeach

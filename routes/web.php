@@ -20,16 +20,14 @@ Route::get('/login', 'AuthController@index')->name('login');
 Route::get('/logout', 'AuthController@logout')->name('logout');
 Route::get('/callback', 'AuthController@callback')->name('callback');
 
-Route::get('/dashboard/testing', 'MailController@testing');
-
 Route::group(['middleware' => 'auth'], function () {
     Route::get('/dashboard/{label_id?}', 'PageController@dashboard')->name('dashboard')->where('label_id', "[0-9]+");
     Route::get('/dashboard/fetch', 'PageController@dashboard_fetch')->name('dashboard.fetch');
 
     Route::get('/mail/new/{step_id}', 'PageController@new_mail_process')->name('mail.new')->where(['step_id' => "[0-9]+"]);
     Route::post('/mail/new/{step_id}',  'PageController@new_mail_process')->name('mail.new.post')->where('step_id', "[0-9]+");
-    Route::get('/mail/new/reset',  'PageController@mail_reset')->name('mail.reset');
-    
+    Route::get('/mail/reset',  'PageController@mail_reset')->name('mail.reset');
+
     Route::get('/mail/new/recipient/{recipient_id?}', 'PageController@add_recipient')->name('mail.new.recipient')->where('recipient_id', "[0-9]+");
     Route::post('/mail/new/recipient', 'PageController@add_recipient')->name('mail.new.recipient.post');
     Route::get('/mail/new', function () {
@@ -38,6 +36,7 @@ Route::group(['middleware' => 'auth'], function () {
 
     Route::get('/mail/{mail_id}', 'PageController@read_mail')->name('mail')->where('mail_id', "[0-9]+");
     Route::get('/mail/{mail_id}/reply/{step_id}', 'PageController@reply_mail')->name('mail.reply')->where(['step_id' => "[0-9]+", 'mail_id' => "[0-9]+"]);
+    Route::post('/mail/{mail_id}/reply/{step_id}', 'PageController@reply_mail')->name('mail.reply.post')->where(['step_id' => "[0-9]+", 'mail_id' => "[0-9]+"]);
     Route::get('/mail/{mail_id}/unread', 'PageController@unread_mail')->name('mail.unread')->where('mail_id', "[0-9]+");
     Route::get('/mail/{mail_id}/delete', 'PageController@delete_mail')->name('mail.delete')->where('mail_id', "[0-9]+");
 
@@ -48,3 +47,5 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/welcome', 'PageController@dashboard_welcome')->name('dashboard.welcome');
     Route::get('/welcome/download', 'MailController@first_time_download')->name('dashboard.welcome.download');
 });
+
+Route::get('/testing', 'PageController@maintanence');
