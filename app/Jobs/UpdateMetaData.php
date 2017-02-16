@@ -8,26 +8,25 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use EVEMail\Http\Controllers\EVEController;
-use EVEMail\Http\Controllers\MailController;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 
-class PostCharacterMail implements ShouldQueue
+class UpdateMetaData implements ShouldQueue
 {
     use InteractsWithQueue, Queueable, SerializesModels;
 
-    public $token, $payload, $eve, $mail;
+    public $token, $data, $eve, $mail_id;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct(Token $token, $payload)
+    public function __construct(Token $token, $mail_id, $data)
     {
         $this->eve = new EVEController();
-        $this->mail = new MailController();
-        $this->payload = $payload;
+        $this->mail_id = $mail_id;
+        $this->data = $data;
         $this->token = $token;
     }
 
@@ -38,9 +37,6 @@ class PostCharacterMail implements ShouldQueue
      */
     public function handle()
     {
-        $this->eve->post_character_mail($this->token, $this->payload);
-        $this->mail->get_character_mail_headers($this->token);
-        $this->mail->process_queue();
+        $this->eve->update_mail_header($this->token, $this->mail_id, $this->data);
     }
-
 }

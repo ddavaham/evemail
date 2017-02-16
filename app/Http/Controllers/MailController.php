@@ -14,7 +14,9 @@ use EVEMail\MailBody;
 use EVEMail\MailRecipient;
 use EVEMail\CharacterContact;
 use EVEMail\Jobs\ProcessQueue;
+use EVEMail\Jobs\UpdateMetaData;
 use EVEMail\Jobs\PostCharacterMail;
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -310,7 +312,7 @@ class MailController extends Controller
             ]);
             return true;
         }
-        return $mail_body->response;
+        return false;
     }
 
     public function send_message($token, $message_payload)
@@ -328,14 +330,10 @@ class MailController extends Controller
         $data = [
             "read" => true
         ];
-        $post_mail_read = $this->eve->update_mail_header($token, $mail_id, $data);
-        if ($post_mail_read->httpStatusCode == 204) {
-            MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->update([
-                'is_read'=> 1
-            ]);
-            return true;
-        }
-
+        $job = (new UpdateMetaData($token, $mail_id, $data))
+                ->delay(Carbon::now()->addSeconds(5));
+        dispatch($job);
+        return true;
     }
 
     public function mark_mail_unread($mail_id)
@@ -344,20 +342,17 @@ class MailController extends Controller
         $data = [
             "read" => false
         ];
-        $post_mail_unread = $this->eve->update_mail_header($token, $mail_id, $data);
-        if ($post_mail_unread->httpStatusCode == 204) {
-            MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->update([
-                'is_read'=> 0
-            ]);
-            return true;
-        }
-        return false;
+        $job = (new UpdateMetaData($token, $mail_id, $data))
+                ->delay(Carbon::now()->addSeconds(5));
+        dispatch($job);
+        return true;
 
     }
 
     public function delete_mail ($mail_id)
     {
-        $mail_body = MailBody::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->first();
+
+        $mail_body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
         $token = $this->refresh_token(Token::where('character_id', $mail_body->character_id)->first());
         $delete_mail_header = $this->eve->delete_mail_header($token, $mail_id);
         if ($delete_mail_header->httpStatusCode == 204) {

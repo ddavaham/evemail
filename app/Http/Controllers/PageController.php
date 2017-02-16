@@ -30,9 +30,13 @@ class PageController extends Controller
 
     public function dashboard (Request $request, $label = null)
     {
-
         if (Auth::user()->is_new) {
             return redirect()->route('dashboard.welcome');
+        }
+
+        if ($request->session()->has('mail') || $request->session()->has('recipients')) {
+            $request->session()->forget('mail');
+            $request->session()->forget('recipients');
         }
 
         $mail_headers = MailHeader::where('mail_header.character_id', Auth::user()->character_id);
@@ -266,6 +270,8 @@ class PageController extends Controller
             return redirect()->route('dashboard');
         }
 
+
+
         $mail_recipients = [];
 
         foreach (json_decode($header->mail_recipient, true) as $recipient) {
@@ -297,14 +303,9 @@ class PageController extends Controller
         $body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
 
 
-        if (is_null($body)) {
+        if ($body->count() == 0) {
             $retrieve_body = $this->mail->get_mail_body($mail_id);
-
-            if (!isset($retrieve_body->error)) {
-
-                $body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
-            } else {
-
+            if (!$retrieve_body->error) {
                 $request->session()->flash('alert', [
                     "header" => "Houston, We have an problem",
                     'message' => "The mail you are requesting does not exist in our database nor are we able to retreive it from CCP. Please check to see if the mail exists via the EVE Online Client.",
@@ -313,11 +314,19 @@ class PageController extends Controller
                 ]);
                 return redirect()->route('dashboard');
             }
+            $body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
         }
         if (!$header->is_read) {
+            $update_label_unread_counter = $this->update_label_unread_counter($request, Auth::user()->character_id, $mail_id, "sub");
+
+
+            $update_header =  MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->update([
+                'is_read' => 1
+            ]);
             $mail_mail = $this->mail->mark_mail_read($header->mail_id);
         }
-
+        $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
+        $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
         return view('pages.mail', [
             'header' => $header,
             'body' => $body,
@@ -408,6 +417,8 @@ class PageController extends Controller
                 return redirect()->route('mail.reply', ['step_id' => 1, 'mail_id' => $header->mail_id]);
             }
 
+            dd("\r\n\r\n{$header->mail_subject}\r\nFrom: ".$header->mail_sender."\r\nSent: {$header->mail_sent_date}\r\nTo: ");
+
             return view('mail.preview_message', [
                 'header' => $header,
                 'mail_labels' => $mail_labels,
@@ -434,6 +445,9 @@ class PageController extends Controller
                 ];
             }
             $message_payload['subject'] = $request->session()->get('mail.subject');
+
+
+
             $message_payload['body'] = $request->session()->get('mail.body');
             $message_payload['approved_cost'] = 10000;
             $token = Token::where('character_id', Auth::user()->character_id)->first();
@@ -472,20 +486,19 @@ class PageController extends Controller
             ]);
             return redirect()->route('dashboard');
         }
+        $update_label_unread_counter = $this->update_label_unread_counter($request, Auth::user()->character_id, $mail_id, "add");
         $unread_mail = $this->mail->mark_mail_unread($mail_id);
-        if ($unread_mail) {
-            $request->session()->flash('alert', [
+        MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->update([
+            'is_read'=> 0
+        ]);
+
+        $request->session()->flash('alert', [
                 'message' => "As far as we are concerned, you never read that mail.",
                 'type' => 'info',
                 'close' => 1
             ]);
             return redirect()->route('dashboard');
-        }
-        $request->session()->flash('alert', [
-            'message' => "We apologize for the inconvienence, put we are unable to update the status of the mail at this time. Please try again in 1 minute.",
-            'type' => 'danger',
-            'close' => 1
-        ]);
+
         return redirect()->route('dashboard');
     }
     public function delete_mail (Request $request, $mail_id)
@@ -517,6 +530,38 @@ class PageController extends Controller
         ]);
         return redirect()->route('dashboard');
     }
+
+    public function update_label_unread_counter(Request $request, $character_id, $mail_id, $action)
+    {
+        $header = MailHeader::where(['character_id' => $character_id, 'mail_id' => $mail_id])->first();
+        $labels = explode(',', $header->mail_labels);
+        foreach ($labels as $label) {
+            $mail_label = MailLabel::where(['character_id' => $character_id, 'label_id' => $label])->first();
+            $unread_count = $mail_label->label_unread_count;
+
+
+            if ($action === "add") {
+                $unread_count = $unread_count+1;
+            }
+            if ($action === "sub") {
+                if ($unread_count <= 0) {
+                    $request->session()->flash('alert', [
+                        "header" => "Houston, We have an problem",
+                        'message' => "Unread count for current label is zero, but you have mail that is unread for this label. Please click Update Mail Labels below so that we can resync your labels unread count to provide you an accurate count.",
+                        'type' => 'danger',
+                        'close' => 1
+                    ]);
+                    return redirect()->route('settings');
+                }
+                $unread_count = $unread_count-1;
+            }
+
+            MailLabel::where(['character_id' => $character_id, 'label_id' => $label])->update([
+                'label_unread_count' => $unread_count
+            ]);
+        }
+    }
+
 
     public function update_mail_labels(Request $request)
     {
