@@ -87,7 +87,7 @@ class PageController extends Controller
                 'type' => 'danger',
                 'close' => 1
             ]);
-            return redirect()->route('dashboard');
+            return redirect()->route('dashboard', ['label_id' => 1]);
         }
     }
 
@@ -192,16 +192,23 @@ class PageController extends Controller
       $mail_body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
 
 
-      $mail_from_to_recipient = MailRecipient::where(['recipient_id' => $mail_header->mail_sender])->first();
-      if (!is_null($mail_from_to_recipient)) {
-        $recipients[$mail_from_to_recipient->recipient_id] = $mail_from_to_recipient;
+      if ($request->first_time) {
+          $mail_from_to_recipient = MailRecipient::where(['recipient_id' => $mail_header->mail_sender])->first();
+          if (!is_null($mail_from_to_recipient)) {
+            $recipients[$mail_from_to_recipient->recipient_id] = $mail_from_to_recipient;
+          }
+          if (!is_null($recipient)) {
+              $recipients[$recipient] = MailRecipient::where(['recipient_id' => $mail_header->mail_sender])->first();
+          } else {
+              foreach (json_decode($mail_header->mail_recipient, true) as $mail_recipient) {
+                $recipient_data = MailRecipient::where(['recipient_id' => $mail_recipient['recipient_id']])->first();
+                $recipients[$recipient_data->recipient_id] = $recipient_data;
+              }
+          }
+          unset($recipients[Auth::user()->character_id]);
+          $request->session()->put('recipients', $recipients);
+          return redirect()->route('mail.reply.build', ['mail_id' => $mail_id]);
       }
-      foreach (json_decode($mail_header->mail_recipient, true) as $mail_recipient) {
-        $recipient_data = MailRecipient::where(['recipient_id' => $mail_recipient['recipient_id']])->first();
-        $recipients[$recipient_data->recipient_id] = $recipient_data;
-      }
-      unset($recipients[Auth::user()->character_id]);
-      $request->session()->put('recipients', $recipients);
       $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
       $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
 
@@ -320,7 +327,7 @@ class PageController extends Controller
 
         $message_payload['body'] = $request->session()->get('mail.body')."\r\n\r\n".$body;
         $message_payload['approved_cost'] = 10000;
-        
+
         $token = $this->mail->refresh_token(Token::where('character_id', Auth::user()->character_id)->first());
         $send_message = $this->mail->send_message($token, $message_payload);
         if ($send_message) {

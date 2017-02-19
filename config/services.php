@@ -22,7 +22,8 @@ return [
         'client_id' => env('EVE_CLIENT_ID'),
         'client_secret' => env('EVE_CLIENT_SECRET'),
         'callback_url' => env('EVE_CALLBACK_URL'),
-        'client_scopes' => "esi-ui.open_window.v1 esi-mail.read_mail.v1 esi-mail.organize_mail.v1 esi-mail.send_mail.v1 esi-characters.read_contacts.v1 esi-characters.write_contacts.v1",
+        'client_scopes' => "esi-mail.read_mail.v1 esi-mail.organize_mail.v1 esi-mail.send_mail.v1",
+        //esi-characters.read_contacts.v1 esi-characters.write_contacts.v1 esi-ui.open_window.v1 
         'oauth_url' => "https://login.eveonline.com",
         'esi_url' => "https://esi.tech.ccp.is",
         'img_serv' => "https://imageserver.eveonline.com",

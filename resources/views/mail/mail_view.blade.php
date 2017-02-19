@@ -42,15 +42,14 @@
                                 @if(isset($mail_recipients))
                                     @foreach ($mail_recipients as $recipient_id=>$recipient)
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-default">{{ $recipient->recipient_name }}</button>
-                                            @if($header->mail_sender !== Auth::user()->character_id)
-                                              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                  <span class="caret"></span>
-                                                  <span class="sr-only">Toggle Dropdown</span>
-                                              </button>
-                                              <ul class="dropdown-menu">
-                                                  <li><a href="{{ route('mail.reply.build', ['mail_id' => $header->mail_id, 'recipient_id' => $recipient_id]) }}">Reply To This Recipient</a></li>
-                                              </ul>
+                                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                {{ $recipient->recipient_name }}&nbsp;&nbsp;&nbsp;<span class="caret"></span>
+                                                <span class="sr-only">Toggle Dropdown</span>
+                                            </button>
+                                            @if($header->mail_sender !== $recipient_id)
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="{{ route('mail.reply.build', ['mail_id' => $header->mail_id, 'recipient_id' => $recipient_id, 'first_time' => 1]) }}">Reply To This Recipient</a></li>
+                                                </ul>
                                              @endif
                                         </div>
                                     @endforeach
@@ -80,7 +79,7 @@
                                 <a href="{{ route('mail.unread', ['mail_id' => $header->mail_id]) }}" class="btn btn-info btn-block">Mark This Message Unread</a>
                             </div>
                             <div class="col-md-4">
-                                <a href="{{ route('mail.reply.build', ['mail_id' => $header->mail_id]) }}" class="btn btn-primary btn-block @if($header->mail_sender == Auth::user()->character_id) disabled @endif">Reply To All</a>
+                                <a href="{{ route('mail.reply.build', ['mail_id' => $header->mail_id, 'first_time' => 1]) }}" class="btn btn-primary btn-block @if($header->mail_sender == Auth::user()->character_id) disabled @endif">Reply To All</a>
                             </div>
                             <div class="col-md-4">
                                 <!-- <a href="#" class="btn btn-danger btn-block">Delete This Message</a> -->
