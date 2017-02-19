@@ -1,7 +1,7 @@
 <div class="col-lg-3">
     <hr />
     <div class="list-group">
-        <a href="{{ route('mail.new', ['step_id' => 1]) }}" class="list-group-item">
+        <a href="{{ route('mail.send.build') }}" class="list-group-item">
 
             Send a Message
         </a>

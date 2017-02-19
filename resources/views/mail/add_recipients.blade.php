@@ -13,7 +13,7 @@
             <h2 class="page-header text-center">Search Address Book</h2>
 
             <div class="panel panel-default">
-                <form action="{{ route('mail.new.recipient') }}" method="post">
+                <form action="{{ route('mail.send.recipient') }}" method="post">
                     <div class="panel-body">
                         <div class="row">
                             <div class="col-md-12">
@@ -76,11 +76,11 @@
                     <div class="panel-heading">
                         <h4 class="panel-title text-center">Search Results (Click to select)</h4>
                     </div>
-                    <form action="{{ route('mail.new.recipient.post',  ['recipient_id' => 2]) }}" method="post">
+                    <form action="{{ route('mail.send.recipient.post',  ['recipient_id' => 2]) }}" method="post">
                         @if (!empty($results))
                             <div class="list-group">
                                 @foreach ($results as $result)
-                                    <a href="{{ route('mail.new.recipient', ['recipient_id' => $result->recipient_id]) }}" class="list-group-item">
+                                    <a href="{{ route('mail.send.recipient', ['recipient_id' => $result->recipient_id]) }}" class="list-group-item">
                                         {{ $result->recipient_name }}
                                     </a>
                                 @endforeach

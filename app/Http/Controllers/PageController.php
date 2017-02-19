@@ -45,6 +45,7 @@ class PageController extends Controller
         }
         $mail_headers = $mail_headers->orderby('mail_header.mail_sent_date', 'desc')->leftJoin('mail_recipient', 'mail_header.mail_sender', '=', 'mail_recipient.recipient_id');
         $mail_headers = $mail_headers->get();
+        $this->update_label_unread_counter($request, Auth::user()->character_id, null, "sync");
         $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
         $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
 
@@ -90,110 +91,6 @@ class PageController extends Controller
         }
     }
 
-    public function new_mail_process(Request $request, $step, $recipient_id = null)
-    {
-        $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
-        $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
-
-        if ($step == 1) {
-            if ($request->isMethod('post')) {
-                $validator = Validator::make($request->all(), [
-                    'body' => "required|min:15",
-                    'subject' => "required|min:5|max:100",
-                ],[
-                    'body.required' => "You do know the point of an email is to actually communicate right? Type something in the body down there for us to send your recipient",
-                    'body.min' => "Alright now, not quite enough beef to the body of this thing. Please make the body off your message atleast :min",
-                    'body.max' => "Alright Mr./Miss Novelist. Im sure this is a well thoughout email, but please limit it to :max characters.",
-                    'subject.required' => "Try typing a subject down there. It helps let the reader know what the email is regarding.",
-                    'subject.min' => "Yikes!! That is a short subject line there. Be a little nicer to your recipients and add some letters. Make it atleast :min characters long",
-                    'subject.max' => " You do realize that at this point, you subject line mine as well be in the body of you email. That is a little log for us. Shoten it to belong :max characters",
-                ]);
-                if ($validator->fails()) {
-                    return redirect()->route('mail.new', ['step_id' => 1])->withErrors($validator)->withInput();
-                }
-                $request->session()->put('mail', [
-                    'body' => $request->get('body'),
-                    'subject' => $request->get('subject')
-                ]);
-                return redirect()->route('mail.new', ['step_id' => 2]);
-            }
-            if ($request->get('remove')) {
-                $recipients = $request->session()->get('recipients');
-                unset($recipients[$request->get('remove')]);
-                array_keys($recipients);
-                $request->session()->put('recipients', $recipients);
-
-                return redirect()->route('mail.new', ['label_id' => 1]);
-            }
-            return view('mail.build_message', [
-                'mail_labels' => $mail_labels,
-                'mailing_lists' => $mailing_lists
-            ]);
-        }
-        if ($step == 2) {
-            if (!$request->session()->has('mail')){
-                $request->session()->flash('alert', [
-                    "header" => "Invalid Page Request",
-                    'message' => "You must have the subject and body of your message set before you can view that page. Please use this page to set those variables.",
-                    'type' => 'info',
-                    'close' => 1
-                ]);
-                return redirect()->route('mail.new', ['step_id' => 1]);
-            }
-
-            return view('mail.preview_message', [
-                'mail_labels' => $mail_labels,
-                'mailing_lists' => $mailing_lists
-            ]);
-        }
-        if ($step == 3) {
-            if (!$request->session()->has('recipients') || !$request->session()->has('mail')){
-                $request->session()->flash('alert', [
-                    "header" => "Invalid Page Request",
-                    'message' => "You must have recipients and a message built in order to access this page. Please use this page to rebuild your message",
-                    'type' => 'info',
-                    'close' => 1
-                ]);
-                return redirect()->route('mail.new', ['step_id' => 1]);
-            }
-            $message_payload = [];
-            $messsage_recipients = $request->session()->get('recipients');
-
-            foreach ($request->session()->get('recipients') as $recipient) {
-                $message_payload['recipients'][] = [
-                    'recipient_id' => $recipient->recipient_id,
-                    'recipient_type' =>$recipient->recipient_type
-                ];
-            }
-            $message_payload['subject'] = $request->session()->get('mail.subject');
-            $message_payload['body'] = $request->session()->get('mail.body');
-            $message_payload['approved_cost'] = 10000;
-            $token = Token::where('character_id', Auth::user()->character_id)->first();
-            $send_message = $this->mail->send_message($token, $message_payload);
-            if ($send_message) {
-                $request->session()->forget('recipients');
-                $request->session()->forget('mail');
-                $request->session()->flash('alert', [
-                    "header" => "Your Mail has been queued",
-                    'message' => "Your mail has been queued successfully. Our minons will send it ASAP. I promise, they are workin hard.",
-                    'type' => 'success',
-                    'close' => 1
-                ]);
-                return redirect()->route('dashboard');
-
-            }
-            $request->session()->flash('alert', [
-                "header" => "Houston, there maybe a problem.",
-                'message' => "We attempted to queue your message, but there was a problem. Do us a favor and click that green button ooooooone more time.",
-                'type' => 'info',
-                'close' => 1
-            ]);
-            return redirect()->route('mail.new', ['step_id' => 3]);
-        }
-    }
-
-
-
     public function add_recipient(Request $request, $recipient_id = null)
     {
             $data = [];
@@ -206,7 +103,7 @@ class PageController extends Controller
                     'recipient_name.max' => "You gave us to much to work with. We need your search string to be shorter :max",
                 ]);
                 if ($validator->fails()) {
-                    return redirect()->route('mail.new.recipient')->withErrors($validator)->withInput();
+                    return redirect()->route('mail.send.recipient')->withErrors($validator)->withInput();
                 }
                 $data = [];
                 if (!is_null($request->get('search'))) {
@@ -219,7 +116,7 @@ class PageController extends Controller
                                 'type' => 'info',
                                 'close' => 1
                             ]);
-                            return redirect()->route('mail.new.recipient');
+                            return redirect()->route('mail.send.recipient');
                         }
 
                     } else {
@@ -229,7 +126,7 @@ class PageController extends Controller
                             'type' => 'info',
                             'close' => 1
                         ]);
-                        return redirect()->route('mail.new.recipient');
+                        return redirect()->route('mail.send.recipient');
                     }
                 }
                 $data['results'] = MailRecipient::where('recipient_name','like','%'.$request->get('recipient_name').'%')->where('recipient_type','character')->get();
@@ -238,7 +135,7 @@ class PageController extends Controller
                 $recipients = ($sessions->has('recipients')) ? $sessions->get('recipients'): [];
                 $recipients[$recipient_id] = MailRecipient::where(['recipient_id' => $recipient_id, 'recipient_type' => "character"])->first();
                 $request->session()->put('recipients', $recipients);
-                return redirect()->route('mail.new.recipient');
+                return redirect()->route('mail.send.recipient');
             }
             return view('mail.add_recipients', $data);
 
@@ -248,14 +145,310 @@ class PageController extends Controller
     {
         $request->session()->forget('recipients');
         $request->session()->forget('mail');
+        if ($request->to) {
+          return redirect($request->to);
+        }
         if (Session::has('is_reply')) {
             $request->session()->forget('is_reply');
             return redirect()->route('dashboard');
         }
-        return redirect()->route('mail.new', ['step_id' => 1]);
+        return redirect()->route('mail.send.build');
     }
 
-    public function read_mail(Request $request, $mail_id)
+    public function mail_reply_build (Request $request, $mail_id, $recipient = null)
+    {
+
+      if ($request->isMethod('post')) {
+          $validator = Validator::make($request->all(), [
+              'body' => "required|min:15",
+              'subject' => "required|min:5|max:100",
+          ],[
+              'body.required' => "You do know the point of an email is to actually communicate right? Type something in the body down there for us to send your recipient",
+              'body.min' => "Alright now, not quite enough beef to the body of this thing. Please make the body off your message atleast :min",
+              'body.max' => "Alright Mr./Miss Novelist. Im sure this is a well thoughout email, but please limit it to :max characters.",
+              'subject.required' => "Try typing a subject down there. It helps let the reader know what the email is regarding.",
+              'subject.min' => "Yikes!! That is a short subject line there. Be a little nicer to your recipients and add some letters. Make it atleast :min characters long",
+              'subject.max' => " You do realize that at this point, you subject line mine as well be in the body of you email. That is a little log for us. Shoten it to belong :max characters",
+          ]);
+          if ($validator->fails()) {
+              return redirect()->route('mail.reply.build', ['mail_id' => $mail_id])->withErrors($validator)->withInput();
+          }
+          $request->session()->put('mail', [
+              'body' => $request->get('body'),
+              'subject' => $request->get('subject')
+          ]);
+          return redirect()->route('mail.reply.preview', ['mail_id' => $mail_id]);
+      }
+      $sessions = $request->session();
+      $recipients = ($sessions->has('recipients')) ? $sessions->get('recipients'): [];
+      if ($request->get('remove')) {
+          unset($recipients[$request->get('remove')]);
+          array_keys($recipients);
+          $request->session()->put('recipients', $recipients);
+
+          return redirect()->route('mail.reply.build', ['mail_id' => $mail_id]);
+      }
+      $mail_header = MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
+      $mail_body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
+
+
+      $mail_from_to_recipient = MailRecipient::where(['recipient_id' => $mail_header->mail_sender])->first();
+      if (!is_null($mail_from_to_recipient)) {
+        $recipients[$mail_from_to_recipient->recipient_id] = $mail_from_to_recipient;
+      }
+      foreach (json_decode($mail_header->mail_recipient, true) as $mail_recipient) {
+        $recipient_data = MailRecipient::where(['recipient_id' => $mail_recipient['recipient_id']])->first();
+        $recipients[$recipient_data->recipient_id] = $recipient_data;
+      }
+      unset($recipients[Auth::user()->character_id]);
+      $request->session()->put('recipients', $recipients);
+      $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
+      $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
+
+      return view('mail.mail_reply_build', [
+        'header' => $mail_header,
+        'to' => $request->path(),
+        'mail_labels' => $mail_labels,
+        'mailing_lists' => $mailing_lists
+      ]);
+    }
+
+    public function mail_reply_preview(Request $request, $mail_id)
+    {
+
+        if (!$request->session()->has('mail')){
+            $request->session()->flash('alert', [
+                "header" => "Invalid Page Request",
+                'message' => "You must have the subject and body of your message set before you can view that page. Please use this page to set those variables.",
+                'type' => 'info',
+                'close' => 1
+            ]);
+            return redirect()->route('mail.send.build');
+        }
+        $mail_header = MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
+        $mail_body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
+        $mail_from_to_recipient = MailRecipient::where(['recipient_id' => $mail_header->mail_sender])->first();
+        if (!is_null($mail_from_to_recipient)) {
+          $recipients[$mail_from_to_recipient->recipient_id] = $mail_from_to_recipient;
+        }
+        foreach (json_decode($mail_header->mail_recipient, true) as $mail_recipient) {
+          $recipient_data = MailRecipient::where(['recipient_id' => $mail_recipient['recipient_id']])->first();
+          $recipients[$recipient_data->recipient_id] = $recipient_data;
+        }
+
+        //Format Appended Text
+        $body = "--------------------------------\r\n";
+        $body .= "Subject: ". $mail_header->mail_subject."\r\n";
+        $body .= "From: ".$recipients[$mail_header->mail_sender]->recipient_name."\r\n";
+        $body .= "Sent: ".Carbon::createFromTimestamp(strtotime($mail_header->mail_sent_date))->format('Y.m.d g:i:s')."\r\n";
+        unset($recipients[$mail_header->mail_sender]);
+        $body .= "To: ";
+        $x = 1;
+        foreach ($recipients as $recipient) {
+          $body .= $recipient->recipient_name;
+          if ($x < count($recipients)) {
+            $body .= ", ";
+            $x++;
+          }
+        }
+        $body .= "\r\n\r\n";
+        $body .= $mail_body->mail_body;
+
+        $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
+        $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
+        return view('mail.mail_reply_preview', [
+            'header' => $mail_header,
+            'reply_body' => $body,
+            'mail_labels' => $mail_labels,
+            'mailing_lists' => $mailing_lists
+        ]);
+    }
+    public function mail_reply_send(Request $request, $mail_id)
+    {
+
+        if (!$request->session()->has('recipients') || !$request->session()->has('mail')){
+            $request->session()->flash('alert', [
+                "header" => "Invalid Page Request",
+                'message' => "You must have recipients and a message built in order to access this page. Please use this page to rebuild your message",
+                'type' => 'info',
+                'close' => 1
+            ]);
+            return redirect()->route('mail.reply.build');
+        }
+        $message_payload = [];
+        $messsage_recipients = $request->session()->get('recipients');
+
+        foreach ($request->session()->get('recipients') as $recipient) {
+            $message_payload['recipients'][] = [
+                'recipient_id' => $recipient->recipient_id,
+                'recipient_type' =>$recipient->recipient_type
+            ];
+        }
+        $message_payload['subject'] = $request->session()->get('mail.subject');
+
+
+        $mail_header = MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
+        $mail_body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
+        $mail_from_to_recipient = MailRecipient::where(['recipient_id' => $mail_header->mail_sender])->first();
+        if (!is_null($mail_from_to_recipient)) {
+          $recipients[$mail_from_to_recipient->recipient_id] = $mail_from_to_recipient;
+        }
+        foreach (json_decode($mail_header->mail_recipient, true) as $mail_recipient) {
+          $recipient_data = MailRecipient::where(['recipient_id' => $mail_recipient['recipient_id']])->first();
+          $recipients[$recipient_data->recipient_id] = $recipient_data;
+        }
+
+        //Format Appended Text
+        $body = "--------------------------------\r\n";
+        $body .= "Subject: ". $mail_header->mail_subject."\r\n";
+        $body .= "From: ".$recipients[$mail_header->mail_sender]->recipient_name."\r\n";
+        $body .= "Sent: ".Carbon::createFromTimestamp(strtotime($mail_header->mail_sent_date))->format('Y.m.d g:i:s')."\r\n";
+        unset($recipients[$mail_header->mail_sender]);
+        $body .= "To: ";
+        $x = 1;
+        foreach ($recipients as $recipient) {
+          $body .= $recipient->recipient_name;
+          if ($x < count($recipients)) {
+            $body .= ", ";
+            $x++;
+          }
+        }
+        $body .= "\r\n\r\n";
+        $body .= $mail_body->mail_body;
+
+
+
+        $message_payload['body'] = $request->session()->get('mail.body')."\r\n\r\n".$body;
+        $message_payload['approved_cost'] = 10000;
+        
+        $token = $this->mail->refresh_token(Token::where('character_id', Auth::user()->character_id)->first());
+        $send_message = $this->mail->send_message($token, $message_payload);
+        if ($send_message) {
+            $request->session()->forget('recipients');
+            $request->session()->forget('mail');
+            $request->session()->flash('alert', [
+                "header" => "Your Mail has been queued",
+                'message' => "Your mail has been queued successfully. Our minons will send it ASAP. I promise, they are workin hard.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return redirect()->route('dashboard');
+
+        }
+        $request->session()->flash('alert', [
+            "header" => "Houston, there maybe a problem.",
+            'message' => "We attempted to queue your message, but there was a problem. Do us a favor and click that green button ooooooone more time.",
+            'type' => 'info',
+            'close' => 1
+        ]);
+        return redirect()->route('mail.send.preview');
+    }
+
+    public function mail_send_build (Request $request)
+    {
+        if ($request->isMethod('post')) {
+            $validator = Validator::make($request->all(), [
+                'body' => "required|min:15",
+                'subject' => "required|min:5|max:100",
+            ],[
+                'body.required' => "You do know the point of an email is to actually communicate right? Type something in the body down there for us to send your recipient",
+                'body.min' => "Alright now, not quite enough beef to the body of this thing. Please make the body off your message atleast :min",
+                'body.max' => "Alright Mr./Miss Novelist. Im sure this is a well thoughout email, but please limit it to :max characters.",
+                'subject.required' => "Try typing a subject down there. It helps let the reader know what the email is regarding.",
+                'subject.min' => "Yikes!! That is a short subject line there. Be a little nicer to your recipients and add some letters. Make it atleast :min characters long",
+                'subject.max' => " You do realize that at this point, you subject line mine as well be in the body of you email. That is a little log for us. Shoten it to belong :max characters",
+            ]);
+            if ($validator->fails()) {
+                return redirect()->route('mail.send.build')->withErrors($validator)->withInput();
+            }
+            $request->session()->put('mail', [
+                'body' => $request->get('body'),
+                'subject' => $request->get('subject')
+            ]);
+            return redirect()->route('mail.send.preview');
+        }
+        if ($request->get('remove')) {
+            $recipients = $request->session()->get('recipients');
+            unset($recipients[$request->get('remove')]);
+            array_keys($recipients);
+            $request->session()->put('recipients', $recipients);
+
+            return redirect()->route('mail.send.build');
+        }
+        $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
+        $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
+        return view('mail.mail_send_build', [
+            'mail_labels' => $mail_labels,
+            'mailing_lists' => $mailing_lists
+        ]);
+    }
+
+    public function mail_send_preview(Request $request)
+    {
+        if (!$request->session()->has('mail')){
+            $request->session()->flash('alert', [
+                "header" => "Invalid Page Request",
+                'message' => "You must have the subject and body of your message set before you can view that page. Please use this page to set those variables.",
+                'type' => 'info',
+                'close' => 1
+            ]);
+            return redirect()->route('mail.send.build');
+        }
+        $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
+        $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
+        return view('mail.mail_send_preview', [
+            'mail_labels' => $mail_labels,
+            'mailing_lists' => $mailing_lists
+        ]);
+    }
+
+    public function mail_send_send(Request $request)
+    {
+        if (!$request->session()->has('recipients') || !$request->session()->has('mail')){
+            $request->session()->flash('alert', [
+                "header" => "Invalid Page Request",
+                'message' => "You must have recipients and a message built in order to access this page. Please use this page to rebuild your message",
+                'type' => 'info',
+                'close' => 1
+            ]);
+            return redirect()->route('mail.send.build');
+        }
+        $message_payload = [];
+        $messsage_recipients = $request->session()->get('recipients');
+
+        foreach ($request->session()->get('recipients') as $recipient) {
+            $message_payload['recipients'][] = [
+                'recipient_id' => $recipient->recipient_id,
+                'recipient_type' =>$recipient->recipient_type
+            ];
+        }
+        $message_payload['subject'] = $request->session()->get('mail.subject');
+        $message_payload['body'] = $request->session()->get('mail.body');
+        $message_payload['approved_cost'] = 10000;
+        $token = $this->mail->refresh_token(Token::where('character_id', Auth::user()->character_id)->first());
+        $send_message = $this->mail->send_message($token, $message_payload);
+        if ($send_message) {
+            $request->session()->forget('recipients');
+            $request->session()->forget('mail');
+            $request->session()->flash('alert', [
+                "header" => "Your Mail has been queued",
+                'message' => "Your mail has been queued successfully. Our minons will send it ASAP. I promise, they are workin hard.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return redirect()->route('dashboard');
+
+        }
+        $request->session()->flash('alert', [
+            "header" => "Houston, there maybe a problem.",
+            'message' => "We attempted to queue your message, but there was a problem. Do us a favor and click that green button ooooooone more time.",
+            'type' => 'info',
+            'close' => 1
+        ]);
+        return redirect()->route('mail.send.preview');
+    }
+
+    public function mail_view(Request $request, $mail_id)
     {
         $header = MailHeader::where(['mail_header.character_id' => Auth::user()->character_id, 'mail_header.mail_id' => $mail_id])
         ->leftJoin('mail_recipient', 'mail_header.mail_sender', '=', 'mail_recipient.recipient_id')
@@ -269,8 +462,6 @@ class PageController extends Controller
             ]);
             return redirect()->route('dashboard');
         }
-
-
 
         $mail_recipients = [];
 
@@ -303,9 +494,9 @@ class PageController extends Controller
         $body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
 
 
-        if ($body->count() == 0) {
+        if (is_null($body)) {
             $retrieve_body = $this->mail->get_mail_body($mail_id);
-            if (!$retrieve_body->error) {
+            if (!$retrieve_body) {
                 $request->session()->flash('alert', [
                     "header" => "Houston, We have an problem",
                     'message' => "The mail you are requesting does not exist in our database nor are we able to retreive it from CCP. Please check to see if the mail exists via the EVE Online Client.",
@@ -327,7 +518,7 @@ class PageController extends Controller
         }
         $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
         $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
-        return view('pages.mail', [
+        return view('mail.mail_view', [
             'header' => $header,
             'body' => $body,
             'mail_labels' => $mail_labels,
@@ -367,7 +558,6 @@ class PageController extends Controller
 
             }
 
-            $request->session()->put('is_reply', true);
             $request->session()->put('recipients',$mail_recipients);
 
             if ($request->isMethod('post')) {
@@ -531,8 +721,26 @@ class PageController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function update_label_unread_counter(Request $request, $character_id, $mail_id, $action)
+    public function update_label_unread_counter(Request $request, $character_id, $mail_id = null, $action)
     {
+        if ($action === "sync") {
+            $label_array = [];
+            $headers = MailHeader::where(['character_id' => $character_id, 'is_read' => 0])->get();
+            foreach ($headers as $header) {
+                $labels = explode(',', $header->mail_labels);
+                foreach ($labels as $label) {
+                    (isset($label_array[$label])) ? $label_array[$label] += 1 : $label_array[$label] = 1;
+                }
+            }
+            foreach ($label_array as $label_id=>$label_count){
+                MailLabel::where(['character_id' => $character_id, 'label_id' => $label_id])->update([
+                    'label_unread_count' => $label_count
+                ]);
+            }
+            return true;
+        }
+
+
         $header = MailHeader::where(['character_id' => $character_id, 'mail_id' => $mail_id])->first();
         $labels = explode(',', $header->mail_labels);
         foreach ($labels as $label) {

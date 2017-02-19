@@ -4,12 +4,10 @@ namespace EVEMail\Http\Controllers;
 use DB;
 use Carbon\Carbon;
 use EVEMail\User;
-use EVEMail\QueuedIds;
 use EVEMail\Token;
 use EVEMail\Queue;
 use EVEMail\MailHeader;
 use EVEMail\MailLabel;
-use EVEMail\MailList;
 use EVEMail\MailBody;
 use EVEMail\MailRecipient;
 use EVEMail\CharacterContact;
@@ -141,21 +139,16 @@ class MailController extends Controller
         $mailing_lists = $this->eve->get_character_mailing_lists ($token);
         if ($mailing_lists->httpStatusCode != 200) {
             return false;
-        } else {
-            foreach ($mailing_lists->response as $mailing_list) {
-                $updateOrCreate = MailList::updateOrCreate([
-                    'character_id' => $token->character_id,
-                    'mailing_list_id' => $mailing_list->mailing_list_id
-                ], [
-                    'character_id' => $token->character_id,
-                    'mailing_list_id' => $mailing_list->mailing_list_id,
-                    'mailing_list_name' => $mailing_list->name
-                ]);
-                $updateOrCreate->save();
-                unset($updateOrCreate);
-            }
-            return true;
         }
+        foreach ($mailing_lists->response as $mailing_list) {
+            MailRecipient::firstOrCreate([
+                'character_id' => $token->character_id,
+                'mailing_list_id' => $mailing_list->mailing_list_id,
+                'mailing_list_name' => $mailing_list->name
+            ]);
+        }
+        return true;
+
     }
 
     public function get_character_contacts(Token $token)
@@ -169,7 +162,7 @@ class MailController extends Controller
                 foreach ($character_contacts['contacts'] as $contact) {
 
                     $contact_known = MailRecipient::where('recipient_id', $contact->contact_id)->first();
-                    if (is_null($contact_known)) {
+                    if ($contact_known->count() == 0) {
                         $is_queued = Queue::where('queue_id', $contact->contact_id)->first();
                         if (is_null($is_queued)) {
                             $PlaceInQueue = Queue::create([
@@ -199,66 +192,66 @@ class MailController extends Controller
         $mail_headers = $this->eve->get_character_mail_headers($token);
         if ($mail_headers->httpStatusCode != 200) {
             return false;
-        } else {
-            foreach ($mail_headers->response as $mail_header) {
-                $header_exists = MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_header->mail_id])->first();
-                if (is_null($header_exists)) {
-                    foreach ($mail_header->recipients as $mail_recipient) {
-                        if ($mail_recipient->recipient_type != "mailing_list") {
-                            $recipient_known = MailRecipient::where('recipient_id', $mail_recipient->recipient_id)->first();
-                            if (is_null($recipient_known)) {
-                                $is_queued = Queue::where('queue_id', $mail_recipient->recipient_id)->first();
-                                if (is_null($is_queued)) {
-                                    $PlaceInQueue = Queue::create([
-                                        'queue_id' => $mail_recipient->recipient_id
-                                    ]);
-                                }
+        }
+        foreach ($mail_headers->response as $mail_header) {
+            $header_exists = MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_header->mail_id])->first();
+            if (is_null($header_exists)) {
+                foreach ($mail_header->recipients as $mail_recipient) {
+                    if ($mail_recipient->recipient_type != "mailing_list") {
+                        $recipient_known = MailRecipient::where('recipient_id', $mail_recipient->recipient_id)->first();
+                        if (is_null($recipient_known)) {
+                            $is_queued = Queue::where('queue_id', $mail_recipient->recipient_id)->first();
+                            if (is_null($is_queued)) {
+                                $PlaceInQueue = Queue::create([
+                                    'queue_id' => $mail_recipient->recipient_id
+                                ]);
                             }
                         }
-
-                        // if ($mail_recipient->recipient_type === "mailing_list") {
-                        //     //$mailing_list_known = MailingList::where('laili', $mail_recipient->recipient_id)->first();
-                        //     $mailing_list_known = null;
-                        //     if (is_null($corporation_known)) {
-                        //         $retrieve_corporation = $this->eve->retrieve_corporation_data($mail_recipient->recipient_id);
-                        //         $corporation_data = EVECorporation::create([
-                        //             'corporation_id' => $retrieve_corporation['corporation_id'],
-                        //             'corporation_name' => $retrieve_corporation['corporation_name']
-                        //         ]);
-                        //         $recipient_data[] = [
-                        //             'recipient_id' => $corporation_data->character_id,
-                        //             'recipient_name' => $corporation_data->character_name,
-                        //             'recipient_type' => "corporation"
-                        //         ];
-                        //
-                        //     }
-                        // }
                     }
 
-                    $sender_known = MailRecipient::where('recipient_id', $mail_header->from)->first();
-                    if (is_null($sender_known)) {
-                        $is_queued = Queue::where('queue_id', $mail_header->from)->first();
-                        if (is_null($is_queued)) {
-                            $PlaceInQueue = Queue::create([
-                                'queue_id' => $mail_header->from
-                            ]);
-                        }
-                    }
-
-                    MailHeader::create([
-                        'character_id' => Auth::user()->character_id,
-                        'mail_id' => $mail_header->mail_id,
-                        'mail_subject' => $mail_header->subject,
-                        'mail_sender' => $mail_header->from,
-                        'mail_sent_date' => $mail_header->timestamp,
-                        'mail_labels' => implode(',',$mail_header->labels),
-                        'mail_recipient' => json_encode($mail_header->recipients),
-                        'is_read' => $mail_header->is_read
-                    ]);
+                    // if ($mail_recipient->recipient_type === "mailing_list") {
+                    //     //$mailing_list_known = MailingList::where('laili', $mail_recipient->recipient_id)->first();
+                    //     $mailing_list_known = null;
+                    //     if (is_null($corporation_known)) {
+                    //         $retrieve_corporation = $this->eve->retrieve_corporation_data($mail_recipient->recipient_id);
+                    //         $corporation_data = EVECorporation::create([
+                    //             'corporation_id' => $retrieve_corporation['corporation_id'],
+                    //             'corporation_name' => $retrieve_corporation['corporation_name']
+                    //         ]);
+                    //         $recipient_data[] = [
+                    //             'recipient_id' => $corporation_data->character_id,
+                    //             'recipient_name' => $corporation_data->character_name,
+                    //             'recipient_type' => "corporation"
+                    //         ];
+                    //
+                    //     }
+                    // }
                 }
-            }
 
+                $sender_known = MailRecipient::where('recipient_id', $mail_header->from)->first();
+                if (is_null($sender_known)) {
+                    $is_queued = Queue::where('queue_id', $mail_header->from)->first();
+                    if (is_null($is_queued)) {
+                        $PlaceInQueue = Queue::create([
+                            'queue_id' => $mail_header->from
+                        ]);
+                    }
+                }
+
+                MailHeader::create([
+                    'character_id' => $token->character_id,
+                    'mail_id' => $mail_header->mail_id,
+                    'mail_subject' => $mail_header->subject,
+                    'mail_sender' => $mail_header->from,
+                    'mail_sent_date' => $mail_header->timestamp,
+                    'mail_labels' => implode(',',$mail_header->labels),
+                    'mail_recipient' => json_encode($mail_header->recipients),
+                    'is_read' => $mail_header->is_read
+                ]);
+            }
         }
+
+
         return true;
     }
 
@@ -369,7 +362,6 @@ class MailController extends Controller
     {
         if (Carbon::now()->toDateTimeString() > $token->token_expiry) {
             return $this->eve->refresh_token($token);
-
         }
         return $token;
     }

@@ -24,21 +24,33 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/dashboard/{label_id?}', 'PageController@dashboard')->name('dashboard')->where('label_id', "[0-9]+");
     Route::get('/dashboard/fetch', 'PageController@dashboard_fetch')->name('dashboard.fetch');
 
-    Route::get('/mail/new/{step_id}', 'PageController@new_mail_process')->name('mail.new')->where(['step_id' => "[0-9]+"]);
-    Route::post('/mail/new/{step_id}',  'PageController@new_mail_process')->name('mail.new.post')->where('step_id', "[0-9]+");
+    Route::get('/mail/new/build', 'PageController@mail_send_build')->name('mail.send.build');
+    Route::post('/mail/new/build',  'PageController@mail_send_build')->name('mail.send.build.post');
+    Route::get('/mail/new/preview', 'PageController@mail_send_preview')->name('mail.send.preview');
+    Route::get('/mail/new/send', 'PageController@mail_send_send')->name('mail.send.send');
+
+
+
+
     Route::get('/mail/reset',  'PageController@mail_reset')->name('mail.reset');
 
-    Route::get('/mail/new/recipient/{recipient_id?}', 'PageController@add_recipient')->name('mail.new.recipient')->where('recipient_id', "[0-9]+");
-    Route::post('/mail/new/recipient', 'PageController@add_recipient')->name('mail.new.recipient.post');
+    Route::get('/mail/new/recipient/{recipient_id?}', 'PageController@add_recipient')->name('mail.send.recipient')->where('recipient_id', "[0-9]+");
+    Route::post('/mail/new/recipient', 'PageController@add_recipient')->name('mail.send.recipient.post');
     Route::get('/mail/new', function () {
-        return redirect()->route('mail.new', ['step_id' => 1]);
+        return redirect()->route('mail.send.build');
     });
 
-    Route::get('/mail/{mail_id}', 'PageController@read_mail')->name('mail')->where('mail_id', "[0-9]+");
-    Route::get('/mail/{mail_id}/reply/{step_id}', 'PageController@reply_mail')->name('mail.reply')->where(['step_id' => "[0-9]+", 'mail_id' => "[0-9]+"]);
-    Route::post('/mail/{mail_id}/reply/{step_id}', 'PageController@reply_mail')->name('mail.reply.post')->where(['step_id' => "[0-9]+", 'mail_id' => "[0-9]+"]);
+    Route::get('/mail/{mail_id}', 'PageController@mail_view')->name('mail')->where('mail_id', "[0-9]+");
+    Route::get('/mail/{mail_id}/reply/build', 'PageController@mail_reply_build')->name('mail.reply.build')->where('mail_id', "[0-9]+");
+    Route::post('/mail/{mail_id}/reply/build', 'PageController@mail_reply_build')->name('mail.reply.build.post')->where('mail_id', "[0-9]+");
+    Route::get('/mail/{mail_id}/reply/preview', 'PageController@mail_reply_preview')->name('mail.reply.preview')->where('mail_id', "[0-9]+");
+    Route::get('/mail/{mail_id}/reply/send', 'PageController@mail_reply_send')->name('mail.reply.send')->where('mail_id', "[0-9]+");
     Route::get('/mail/{mail_id}/unread', 'PageController@unread_mail')->name('mail.unread')->where('mail_id', "[0-9]+");
     Route::get('/mail/{mail_id}/delete', 'PageController@delete_mail')->name('mail.delete')->where('mail_id', "[0-9]+");
+
+    Route::get('/mail/{mail_id}/forward', 'PageController@forward_mail')->name('mail.forward')->where('mail_id', "[0-9]+");
+
+
 
     Route::get('/settings', 'PageController@settings')->name('settings');
     Route::get('/settings/update/labels', 'PageController@update_mail_labels')->name('settings.labels');

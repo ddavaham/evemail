@@ -19,10 +19,10 @@
         <div class="row">
             @include ('extra.sidebar-nav')
             <div class="col-lg-9">
-                <h2 class="page-header">Create Your Message</h2>
+                <h2 class="page-header">Reply To {{ $header->mail_subject }}</h2>
                 @include('extra.alert')
                 <div class="panel panel-default">
-                    <form action="{{ route('mail.new', ['step_id' => 1]) }}" method="post">
+                    <form action="{{ route('mail.reply.build.post', ['mail_id' => $header->mail_id]) }}" method="post">
                         <table class="table table-bodered">
                             <tr>
                                 <td width=15%>
@@ -47,7 +47,7 @@
                                                 <span class="sr-only">Toggle Dropdown</span>
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <li><a href="{{ route('mail.new', ['step_id' => 1, 'remove' => $k]) }}">Remove This Recipient</a></li>
+                                                <li><a href="{{ route('mail.reply.build', ['mail_id' => $header->mail_id,'remove' => $k]) }}">Remove This Recipient</a></li>
                                             </ul>
                                         </div>
                                         @endforeach
@@ -62,7 +62,8 @@
                                 </td>
                                 <td>
     								<div class="form-group">
-    									<input type="text" name="subject" id="subject" class="form-control" value="@if(Session::has('mail.subject')){{Session::get('mail.subject')}}@else{{old('subject')}}@endif"/>
+    									<input type="text" name="subject" id="subject" class="form-control" value="@if(Session::has('mail.subject')){{Session::get('mail.subject')}}@elseif (old('subject')){{old('subject')}}@else{{ 'Re: '.$header->mail_subject }}@endif"/>
+
     								</div>
                                 </td>
                             </tr>
@@ -75,14 +76,14 @@
                         </div>
                         <div class="panel-body">
                             <div class="form-group">
-    							<textarea name="body" id="body" class="form-control" rows="20">@if (Session::has('mail.body')){{ trim(Session::get('mail.body'), 'l') }}@else{{ old('body') }}@endif</textarea>
-    							<span class="helper">* right now this is only plain text. I will be adding a basic WYSIWYG Editor soon</span>
+    							<textarea name="body" id="body" class="form-control" rows="20">@if (Session::has('mail.body')){{Session::get('mail.body')}}@else{{old('body')}}@endif</textarea>
+    							<span class="helper">* The body of the message you are responding to will be appended the bottom of the text above during process.</span>
     						</div>
                         </div>
                         <div class="panel-footer">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <a href="{{ route('mail.reset') }}" class="btn btn-danger btn-block">Reset</a>
+                                    <a href="{{ route('mail.reset', ['to' => $to]) }}" class="btn btn-danger btn-block">Reset</a>
                                 </div>
                                 <div class="col-md-6">
                                     {{ csrf_field() }}
@@ -105,7 +106,7 @@
 
 <script>
     function addressBook() {
-        var openAddressBook = window.open("{{ route('mail.new.recipient') }}", "Address Book", "height="+ (screen.height * .5) +" ,width="+ (screen.width * .5 )+",top="+ (screen.height * .25) +",left="+ (screen.width * .25));
+        var openAddressBook = window.open("{{ route('mail.send.recipient') }}",null, "height="+ (screen.height * .5) +" ,width="+ (screen.width * .5 )+",top="+ (screen.height * .25) +",left="+ (screen.width * .25));
     }
 </script>
 
