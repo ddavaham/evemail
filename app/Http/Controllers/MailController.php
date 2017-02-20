@@ -48,11 +48,11 @@ class MailController extends Controller
 
         $mailing_lists = $this->get_character_mailing_lists ($token);
 
-        $character_contacts = $this->get_character_contacts($token);
+        //$character_contacts = $this->get_character_contacts($token);
 
         $process_queue = $this->process_queue();
 
-        if ($mail_headers && $mail_labels && $mailing_lists && $character_contacts) {
+        if ($mail_headers && $mail_labels && $mailing_lists) {
             User::where('character_id', Auth::user()->character_id)->update([
                 'is_new' => 0
             ]);
@@ -114,7 +114,7 @@ class MailController extends Controller
             foreach ($mail_labels->response->labels as $label) {
                 $exists = MailLabel::where(['character_id' => $token->character_id, 'label_id' => $label->label_id])->first();
 
-                if ($exists->count() > 0) {
+                if (!is_null($exists)) {
                     MailLabel::where(['character_id' => $token->character_id, 'label_id' => $label->label_id])->update([
                         'label_name' => $label->name,
                         'label_unread_count' => (isset($label->unread_count)) ? $label->unread_count : null
@@ -143,8 +143,8 @@ class MailController extends Controller
         foreach ($mailing_lists->response as $mailing_list) {
             MailRecipient::firstOrCreate([
                 'character_id' => $token->character_id,
-                'mailing_list_id' => $mailing_list->mailing_list_id,
-                'mailing_list_name' => $mailing_list->name
+                'recipient_id' => $mailing_list->mailing_list_id,
+                'recipient_name' => $mailing_list->name
             ]);
         }
         return true;

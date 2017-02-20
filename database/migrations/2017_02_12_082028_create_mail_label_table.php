@@ -17,7 +17,7 @@ class CreateMailLabelTable extends Migration
             $table->bigInteger('character_id');
             $table->integer('label_id');
             $table->string('label_name');
-            $table->int('label_unread_count');
+            $table->integer('label_unread_count')->nullable();
             $table->timestamps();
 
             $table->primary(['character_id', 'label_id']);

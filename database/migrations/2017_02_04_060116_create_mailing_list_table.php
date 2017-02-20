@@ -18,6 +18,8 @@ class CreateMailingListTable extends Migration
             $table->integer('mailing_list_id');
             $table->string('mailing_list_name');
             $table->timestamps();
+
+            
             $table->primary(['mailing_list_id', 'character_id']);
 
         });

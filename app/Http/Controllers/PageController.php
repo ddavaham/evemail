@@ -40,6 +40,7 @@ class PageController extends Controller
         }
 
         $mail_headers = MailHeader::where('mail_header.character_id', Auth::user()->character_id);
+        $mail_headers->update(['is_known' => 1]);
         if (!is_null($label)) {
             $mail_headers = $mail_headers->whereRaw('FIND_IN_SET('. $label .',mail_header.mail_labels) > 0');
         }

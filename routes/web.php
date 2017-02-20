@@ -14,6 +14,10 @@ use Illuminate\Http\Request;
 */
 /* Hoem Route */
 Route::get('/', 'PageController@index')->name('home');
+Route::get('/about-us', 'PageController@about_us')->name('about');
+Route::get('/services', 'PageController@services')->name('services');
+Route::get('/contact-us', 'PageController@contact_us')->name('contact');
+
 
 /* Authorization Routes */
 Route::get('/login', 'AuthController@index')->name('login');

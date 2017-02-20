@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateMailTable extends Migration
+class CreateMailHeaderUpdateTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,12 @@ class CreateMailTable extends Migration
      */
     public function up()
     {
-        Schema::create('mail', function (Blueprint $table) {
-            $table->bigInteger('mail_id');
-
+        Schema::create('mail_header_update', function (Blueprint $table) {
+            $table->integer('character_id');
+            $table->timestamp('last_header_update')->nullable();
             $table->timestamps();
+
+            $table->primary('character_id');
         });
     }
 
@@ -27,6 +29,6 @@ class CreateMailTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('mails');
+        Schema::dropIfExists('mail_header_update');
     }
 }
