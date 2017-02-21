@@ -20,7 +20,7 @@
 
         @foreach ($mail_labels as $label)
 
-            <a href="{{ route('dashboard', ['label_id' => $label->label_id]) }}" class="list-group-item @if ($label_id == $label->label_id)active @endif">
+            <a href="{{ route('dashboard', ['label_id' => $label->label_id]) }}" class="list-group-item @if (isset($label_id) && $label_id == $label->label_id)active @endif">
                 <span class="badge">{{ $label->label_unread_count }}</span>
                 {{ $label->label_name }}
             </a>
