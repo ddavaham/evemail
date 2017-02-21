@@ -394,10 +394,10 @@ class PageController extends Controller
 
     public function mail_send_preview(Request $request)
     {
-        if (!$request->session()->has('mail')){
+        if (!$request->session()->has('mail') || !$request->session->has('recipients')){
             $request->session()->flash('alert', [
                 "header" => "Invalid Page Request",
-                'message' => "You must have the subject and body of your message set before you can view that page. Please use this page to set those variables.",
+                'message' => "You must have the recipients,subject, and body of your message set before you can view that page. Please use this page to set those variables.",
                 'type' => 'info',
                 'close' => 1
             ]);
