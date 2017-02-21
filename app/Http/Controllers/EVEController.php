@@ -133,7 +133,7 @@ class EVEController extends Controller
 
         ], 200, 5);
         $this->http_logger(Carbon::now()->timestamp, $curl_request);
-        if (count($curl_request->response->character) > 1) {
+        if (count($curl_request->response->character) > 0) {
             $result = $this->post_universe_names($curl_request->response->character);
             return $result;
         }
