@@ -53,7 +53,8 @@ class PageController extends Controller
         return view('pages.dashboard', [
             'mail_headers' => $mail_headers,
             'mail_labels' => $mail_labels,
-            'mailing_lists' => $mailing_lists
+            'mailing_lists' => $mailing_lists,
+            'label_id' => $label
         ]);
     }
 

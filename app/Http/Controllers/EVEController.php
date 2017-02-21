@@ -146,6 +146,10 @@ class EVEController extends Controller
             ['key' => "Content-Type",'value' => "application/json"],
             ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]
         ], 'post', config('services.eve.esi_url')."/v2/universe/names/", json_encode($ids), 200);
+        if ($curl_request->httpStatusCode !== 200) {
+            dump($ids);
+            dd($curl_request);
+        }
         $this->http_logger(Carbon::now()->timestamp, $curl_request);
         return $curl_request;
     }

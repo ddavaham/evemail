@@ -21,7 +21,7 @@
             @include ('extra.sidebar-nav')
             <div class="col-lg-9">
                 <h2 class="page-header">
-                    Your Inbox
+                    {{ Auth::user()->character_name }}'s Mailbox
 
                 </h2>
 
