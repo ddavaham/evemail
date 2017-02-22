@@ -39,9 +39,10 @@ class DeleteMail implements ShouldQueue
     {
         $mail_body = MailBody::where(['character_id' => $this->token->character_id, 'mail_id' => $mail_id])->first();
         $token = $this->mail->refresh_token(Token::where('character_id', $mail_body->character_id)->first());
+        $delete_mail_header = $this->eve->delete_mail_header($token, $mail_id);
         MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
         MailBody::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
-        $delete_mail_header = $this->eve->delete_mail_header($token, $mail_id);
+
 
 
 

@@ -7,6 +7,7 @@ use EVEMail\User;
 use EVEMail\Token;
 use EVEMail\Queue;
 use EVEMail\MailHeader;
+use EVEMail\MailHeaderUpdate;
 use EVEMail\MailLabel;
 use EVEMail\MailBody;
 use EVEMail\MailRecipient;
@@ -197,7 +198,7 @@ class MailController extends Controller
             $header_exists = MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_header->mail_id])->first();
             if (is_null($header_exists)) {
                 foreach ($mail_header->recipients as $mail_recipient) {
-                    if ($mail_recipient->recipient_type != "mailing_list") {
+                    if ($mail_recipient->recipient_type !== "mailing_list") {
                         $recipient_known = MailRecipient::where('recipient_id', $mail_recipient->recipient_id)->first();
                         if (is_null($recipient_known)) {
                             $is_queued = Queue::where('queue_id', $mail_recipient->recipient_id)->first();
@@ -249,6 +250,11 @@ class MailController extends Controller
                     'is_read' => $mail_header->is_read
                 ]);
             }
+            MailHeaderUpdate::updateOrCreate([
+                'character_id' => $token->character_id
+            ], [
+                'last_header_update' => Carbon::now()->toDateTimeString()
+            ]);
         }
 
 
