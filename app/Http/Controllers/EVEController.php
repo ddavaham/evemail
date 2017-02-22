@@ -141,7 +141,7 @@ class EVEController extends Controller
     }
     public function post_universe_names($ids)
     {
-        if (!is_array($ids)) { return false; }
+        if (!is_array($ids) || count($ids) <= 0) { return false; }
         $curl_request = $this->curl_request([
             ['key' => "Content-Type",'value' => "application/json"],
             ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]

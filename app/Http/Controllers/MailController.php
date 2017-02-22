@@ -79,7 +79,7 @@ class MailController extends Controller
     {
         $queued_ids = Queue::select('queue_id')->get();
 
-        if (!is_null($queued_ids)) {
+        if (!is_null($queued_ids) && $queued_ids->count() > 0) {
             $ids = [];
             foreach ($queued_ids as $id) {
                 $ids[] = $id->queue_id;
