@@ -35,7 +35,7 @@
             <div class="col-lg-9">
                 <h2 class="page-header">Your Inbox</h2>
                 <p>
-                    Welcoem to EVEMail {{ Auth::user()->character_name }}. This area is generally filled with messages in your inbox, but since you are new to this site, we have not pull you Mail Box Data from EVE yet. This can take a while due to the amount of data that is pulled down, so when you're ready, please click the button below and sit back for a sec. We'll let you know when we are done. This is the only time that this will have to be manually down. From here on out this process is automated.
+                    Welcome to EVEMail {{ Auth::user()->character_name }}. This area is generally filled with messages in your inbox, but since you are new to this site, we have not pulled your Mail Box Data from EVE yet. This can take a while due to the amount of data that is pulled down, so when you're ready, please click the button below and sit back for a sec. We'll let you know when we are done. This is the only time that this will have to be manually downloaded. From here on out this process is automated.
                 </p>
                 <div class="row">
                     <div class="col-md-4 col-md-offset-4">

@@ -59,7 +59,7 @@ class MailController extends Controller
             ]);
             $request->session()->flash('alert', [
                 "header" => "Mail Downloaded Successfully",
-                'message' => "We have downloaded your mails successfully. Bear with us while we continue downloaded the name of all the character that are apart of those mails though. You can access your mails, but until are minions have reached out to CCP to get the character data for those emails, we won't know whose name to display to you. Thanks for using EVEMail.Space",
+                'message' => "We have downloaded your mails successfully. Bear with us while we continue downloading the names of all the character that are part of those mails. You can access your mails, but until our minions have reached out to CCP to get the character data for those emails, we won't know whose name to display to you. Thanks for using EVEMail.Space",
                 'type' => 'success',
                 'close' => 1
             ]);
