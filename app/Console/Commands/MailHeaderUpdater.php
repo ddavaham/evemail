@@ -45,7 +45,7 @@ class MailHeaderUpdater extends Command
      */
     public function handle()
     {
-        $headers = MailHeaderUpdate::where('last_header_update', '<', Carbon::now()->subSeconds(31))->get();
+        $headers = MailHeaderUpdate::where('last_header_update', '<', Carbon::now()->subSeconds(31))->limit(5)->get();
         if (!is_null($headers)) {
             foreach ($headers as $header) {
                 $token = Token::where('character_id', $header->character_id)->first();
