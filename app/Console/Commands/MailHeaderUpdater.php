@@ -45,7 +45,7 @@ class MailHeaderUpdater extends Command
      */
     public function handle()
     {
-        $headers = MailHeaderUpdate::where('last_header_update', '<', Carbon::now()->subSeconds(31))->limit(5)->get();
+        $headers = MailHeaderUpdate::orderby('last_header_update', 'asc')->limit(10)->get();
         if (!is_null($headers)) {
             foreach ($headers as $header) {
                 $token = Token::where('character_id', $header->character_id)->first();
@@ -53,10 +53,7 @@ class MailHeaderUpdater extends Command
                     $job = (new GetCharacterMailHeaders($token))
                             ->delay(Carbon::now()->addSeconds(5));
                     dispatch($job);
-                } else {
-                    Log::info("Unable to find token for user with character id of ".$headers->character_id);
                 }
-
             }
         }
     }
