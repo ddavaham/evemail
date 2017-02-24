@@ -54,23 +54,25 @@ class EVEController extends Controller
 
     public function http_logger($request_id, $data)
     {
-        HttpLogger::create([
-            'request_id' => $request_id,
-            'error' => $data->error,
-            'errorCode' => $data->errorCode,
-            'errorMessage' => $data->errorMessage,
-            'curlError' => $data->curlError,
-            'curlErrorCode' => $data->curlErrorCode,
-            'curlErrorMessage' => $data->curlErrorMessage,
-            'httpError' => $data->httpError,
-            'httpStatusCode' => $data->httpStatusCode,
-            'httpErrorMessage' => $data->httpErrorMessage,
-            'baseUrl' => $data->baseUrl,
-            'url' => $data->url,
-            'requestHeaders' => json_encode((array)$data->requestHeaders, true),
-            'responseHeaders' => json_encode((array)$data->responseHeaders,true),
-            'response' => json_encode((array)$data->response,true)
-        ]);
+        if ($data->httpStatusCode > 300) {
+            HttpLogger::create([
+                'request_id' => $request_id,
+                'error' => $data->error,
+                'errorCode' => $data->errorCode,
+                'errorMessage' => $data->errorMessage,
+                'curlError' => $data->curlError,
+                'curlErrorCode' => $data->curlErrorCode,
+                'curlErrorMessage' => $data->curlErrorMessage,
+                'httpError' => $data->httpError,
+                'httpStatusCode' => $data->httpStatusCode,
+                'httpErrorMessage' => $data->httpErrorMessage,
+                'baseUrl' => $data->baseUrl,
+                'url' => $data->url,
+                'requestHeaders' => json_encode((array)$data->requestHeaders, true),
+                'responseHeaders' => json_encode((array)$data->responseHeaders,true),
+                'response' => json_encode((array)$data->response,true)
+            ]);
+        }
     }
 
     public function oauth_verify_auth_code ($code)
