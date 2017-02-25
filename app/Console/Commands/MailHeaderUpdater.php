@@ -45,7 +45,7 @@ class MailHeaderUpdater extends Command
      */
     public function handle()
     {
-        $headers = MailHeaderUpdate::orderby('last_header_update', 'asc')->limit(10)->get();
+        $headers = MailHeaderUpdate::orderby('last_header_update', 'asc')->limit(20)->get();
         if (!is_null($headers)) {
             foreach ($headers as $header) {
                 $token = Token::where('character_id', $header->character_id)->first();

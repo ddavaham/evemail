@@ -13,7 +13,8 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        "EVEMail\Console\Commands\MailHeaderUpdater"
+        "EVEMail\Console\Commands\MailHeaderUpdater",
+        "EVEMail\Console\Commands\PurgeOldMailBodies"
     ];
 
     /**
@@ -24,8 +25,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('mail:update_headers')
-                 ->everyMinute();
+        $schedule->command('mail:update_headers')->everyFiveMinutes();
+        $schedule->command('mail:purge_old_mails')->hourly();
     }
 
     /**
