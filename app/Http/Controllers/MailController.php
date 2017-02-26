@@ -79,14 +79,14 @@ class MailController extends Controller
     {
         $queued_ids = Queue::select('queue_id')->get();
 
-        if (!is_null($queued_ids) && $queued_ids->count() > 0) {
+        if (!is_null($queued_ids)) {
             $ids = [];
             foreach ($queued_ids as $id) {
                 $ids[] = $id->queue_id;
             }
             $parse_ids = $this->eve->post_universe_names($ids);
 
-            if ($parse_ids->httpStatusCode == 200) {
+            if ($parse_ids && $parse_ids->httpStatusCode == 200) {
                 foreach ($parse_ids->response as $parsed_id) {
                     MailRecipient::create([
                         'recipient_id' => $parsed_id->id,
@@ -152,38 +152,38 @@ class MailController extends Controller
 
     }
 
-    public function get_character_contacts(Token $token)
-    {
-        $token = $this->refresh_token($token);
-        $character_contacts = $this->eve->get_character_contacts($token);
-        if ($character_contacts['curl']->httpStatusCode != 200) {
-            return false;
-        } else {
-            if (isset($character_contacts['contacts'])) {
-                foreach ($character_contacts['contacts'] as $contact) {
-
-                    $contact_known = MailRecipient::where('recipient_id', $contact->contact_id)->first();
-                    if ($contact_known->count() == 0) {
-                        $is_queued = Queue::where('queue_id', $contact->contact_id)->first();
-                        if (is_null($is_queued)) {
-                            $PlaceInQueue = Queue::create([
-                                'queue_id' => $contact->contact_id
-                            ]);
-                        }
-                    }
-                    $updateOrCreate = CharacterContact::updateOrCreate([
-                        'character_id' => $token->character_id,
-                        'contact_id' => $contact->contact_id
-                    ], [
-                        'character_id' => $token->character_id,
-                        'contact_id' => $contact->contact_id,
-                        'contact_type' => $contact->contact_type
-                    ]);
-                }
-            }
-            return true;
-        }
-    }
+    // public function get_character_contacts(Token $token)
+    // {
+    //     $token = $this->refresh_token($token);
+    //     $character_contacts = $this->eve->get_character_contacts($token);
+    //     if ($character_contacts['curl']->httpStatusCode != 200) {
+    //         return false;
+    //     } else {
+    //         if (isset($character_contacts['contacts'])) {
+    //             foreach ($character_contacts['contacts'] as $contact) {
+    //
+    //                 $contact_known = MailRecipient::where('recipient_id', $contact->contact_id)->first();
+    //                 if (is_null($contact_known)) {
+    //                     $is_queued = Queue::where('queue_id', $contact->contact_id)->first();
+    //                     if (is_null($is_queued)) {
+    //                         $PlaceInQueue = Queue::create([
+    //                             'queue_id' => $contact->contact_id
+    //                         ]);
+    //                     }
+    //                 }
+    //                 $updateOrCreate = CharacterContact::updateOrCreate([
+    //                     'character_id' => $token->character_id,
+    //                     'contact_id' => $contact->contact_id
+    //                 ], [
+    //                     'character_id' => $token->character_id,
+    //                     'contact_id' => $contact->contact_id,
+    //                     'contact_type' => $contact->contact_type
+    //                 ]);
+    //             }
+    //         }
+    //         return true;
+    //     }
+    // }
 
     public function get_character_mail_headers (Token $token)
     {

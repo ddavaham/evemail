@@ -9,6 +9,6 @@ class HttpLogger extends Model
     protected $table = 'http_logger';
     protected $fillable = [
 		'request_id','error','errorCode','errorMessage','curlError','curlErrorCode','curlErrorMessage','httpError','httpStatusCode',
-		'httpErrorMessage','baseUrl','url','requestHeaders','responseHeaders', 'response', 'type'
+		'httpErrorMessage','baseUrl','url','data', 'response', 'type'
 	];
 }

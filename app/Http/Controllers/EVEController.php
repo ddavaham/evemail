@@ -54,7 +54,7 @@ class EVEController extends Controller
 
     public function http_logger($request_id, $data)
     {
-        if ($data->httpStatusCode > 300) {
+        if ($data->httpStatusCode >= 300) {
             HttpLogger::create([
                 'request_id' => $request_id,
                 'error' => $data->error,
@@ -68,8 +68,6 @@ class EVEController extends Controller
                 'httpErrorMessage' => $data->httpErrorMessage,
                 'baseUrl' => $data->baseUrl,
                 'url' => $data->url,
-                'requestHeaders' => json_encode((array)$data->requestHeaders, true),
-                'responseHeaders' => json_encode((array)$data->responseHeaders,true),
                 'response' => json_encode((array)$data->response,true)
             ]);
         }
@@ -132,7 +130,6 @@ class EVEController extends Controller
         ], 'get', config('services.eve.esi_url')."/v1/search/", [
             'search' => $search_string,
             'categories' => 'character'
-
         ], 200, 5);
         $this->http_logger(Carbon::now()->timestamp, $curl_request);
         if (count($curl_request->response->character) > 0) {

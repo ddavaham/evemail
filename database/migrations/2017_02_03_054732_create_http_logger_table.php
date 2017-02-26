@@ -27,8 +27,7 @@ class CreateHttpLoggerTable extends Migration
             $table->string('httpErrorMessage', 512)->nullable();
             $table->string('baseUrl', 512);
             $table->string('url', 512);
-            $table->text('requestHeaders');
-            $table->text('responseHeaders');
+            $table->text('options');
             $table->text('response');
             $table->timestamps();
         });
