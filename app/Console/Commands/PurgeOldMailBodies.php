@@ -2,6 +2,8 @@
 
 namespace EVEMail\Console\Commands;
 
+use Carbon\Carbon;
+use EVEMail\MailBody;
 use Illuminate\Console\Command;
 
 class PurgeOldMailBodies extends Command
@@ -37,6 +39,6 @@ class PurgeOldMailBodies extends Command
      */
     public function handle()
     {
-        \EVEMail\MailBody::where('created_at', '<', \Carbon\Carbon::now()->subHours(12))->delete();
+        MailBody::where('created_at', '<', Carbon::now()->subHours(12))->delete();
     }
 }
