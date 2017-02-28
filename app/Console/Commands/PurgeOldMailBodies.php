@@ -39,6 +39,6 @@ class PurgeOldMailBodies extends Command
      */
     public function handle()
     {
-        MailBody::where('created_at', '<', Carbon::now()->subHours(12))->delete();
+        MailBody::where('created_at', '<', Carbon::now()->subHours(6))->delete();
     }
 }

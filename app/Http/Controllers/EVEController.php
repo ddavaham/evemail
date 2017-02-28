@@ -55,6 +55,7 @@ class EVEController extends Controller
     public function http_logger($request_id, $data)
     {
         if ($data->httpStatusCode >= 300) {
+
             HttpLogger::create([
                 'request_id' => $request_id,
                 'error' => $data->error,
@@ -68,6 +69,7 @@ class EVEController extends Controller
                 'httpErrorMessage' => $data->httpErrorMessage,
                 'baseUrl' => $data->baseUrl,
                 'url' => $data->url,
+                'options' => json_encode((array)$data->options,true),
                 'response' => json_encode((array)$data->response,true)
             ]);
         }

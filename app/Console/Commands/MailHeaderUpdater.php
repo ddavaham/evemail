@@ -2,8 +2,7 @@
 
 namespace EVEMail\Console\Commands;
 
-use DB;
-use Log;
+
 use Carbon\Carbon;
 use EVEMail\Token;
 use EVEMail\Jobs\GetCharacterMailHeaders;
@@ -35,6 +34,7 @@ class MailHeaderUpdater extends Command
      */
     public function __construct()
     {
+        $this->mail = new MailController();
         parent::__construct();
     }
 
@@ -48,12 +48,12 @@ class MailHeaderUpdater extends Command
         $headers = MailHeaderUpdate::orderby('last_header_update', 'asc')->limit(20)->get();
         if (!is_null($headers)) {
             foreach ($headers as $header) {
-                $token = Token::where('character_id', $header->character_id)->first();
+                $token = $this->mail->refresh_token(Token::where('character_id', $header->character_id)->first());
                 if (!is_null($token)) {
-                    $job = (new GetCharacterMailHeaders($token))
-                            ->delay(Carbon::now()->addSeconds(5));
-                    dispatch($job);
+                    $this->mail->get_character_mail_headers($token);
+                    $this->mail->process_queue();
                 }
+                usleep(1000000);
             }
         }
     }

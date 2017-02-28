@@ -25,7 +25,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('mail:update_headers')->everyFiveMinutes();
+        $schedule->command('mail:update_headers')->everyMinute();
         $schedule->command('mail:purge_old_mails')->hourly();
     }
 
