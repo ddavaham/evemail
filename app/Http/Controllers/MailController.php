@@ -249,6 +249,10 @@ class MailController extends Controller
                     'mail_recipient' => json_encode($mail_header->recipients),
                     'is_read' => $mail_header->is_read
                 ]);
+            } else {
+                MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_header->mail_id])->update([
+                    'is_read' => $mail_header->is_read
+                ]);
             }
             MailHeaderUpdate::updateOrCreate([
                 'character_id' => $token->character_id
