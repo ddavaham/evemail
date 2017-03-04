@@ -45,15 +45,12 @@ class MailHeaderUpdater extends Command
      */
     public function handle()
     {
-        $headers = MailHeaderUpdate::orderby('last_header_update', 'asc')->limit(20)->get();
+        $headers = MailHeaderUpdate::orderby('last_header_update', 'asc')->limit(30)->get();
         if (!is_null($headers)) {
             foreach ($headers as $header) {
-                $token = $this->mail->refresh_token(Token::where('character_id', $header->character_id)->first());
-                if (!is_null($token)) {
-                    $this->mail->get_character_mail_headers($token);
-                    $this->mail->process_queue();
-                }
-                usleep(1000000);
+                $job = (new GetCharacterMailHeaders($header->character_id))
+                        ->delay(Carbon::now()->addSeconds(5));
+                dispatch($job);
             }
         }
     }

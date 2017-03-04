@@ -20,10 +20,10 @@ class GetCharacterMailHeaders implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(Token $token)
+    public function __construct($character_id)
     {
         $this->mail = new MailController();
-        $this->token = $token;
+        $this->character_id = $character_id
     }
 
     /**
@@ -33,7 +33,11 @@ class GetCharacterMailHeaders implements ShouldQueue
      */
     public function handle()
     {
-        $this->mail->get_character_mail_headers($this->token);
-        $this->mail->process_queue();
+        $token = $this->mail->refresh_token(Token::where('character_id', $this->character_id)->first());
+        if ($token !== false) {
+            $this->mail->get_character_mail_headers($token);
+            $this->mail->process_queue();
+        }
+
     }
 }
