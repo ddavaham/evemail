@@ -38,7 +38,6 @@ class GetCharacterMailHeaders implements ShouldQueue
         $token = $this->token->update_token(Token::where('character_id', $this->character_id)->first());
         if ($token !== false) {
             $this->mail->get_character_mail_headers($token);
-            $this->mail->process_queue();
         }
 
     }
