@@ -43,4 +43,10 @@ class PostCharacterMail implements ShouldQueue
         $this->mail->process_queue();
     }
 
+    public function __destruct(){
+        foreach (get_class_vars(__CLASS__) as $clsVar => $_) {
+            unset($this->$clsVar);
+        }
+    }
+
 }

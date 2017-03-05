@@ -39,4 +39,10 @@ class UpdateMetaData implements ShouldQueue
     {
         $this->http->update_mail_header($this->token, $this->mail_id, $this->data);
     }
+
+    public function __destruct(){
+        foreach (get_class_vars(__CLASS__) as $clsVar => $_) {
+            unset($this->$clsVar);
+        }
+    }
 }

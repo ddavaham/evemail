@@ -43,8 +43,12 @@ class DeleteMail implements ShouldQueue
         MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
         MailBody::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
 
+    }
 
 
-
+    public function __destruct(){
+        foreach (get_class_vars(__CLASS__) as $clsVar => $_) {
+            unset($this->$clsVar);
+        }
     }
 }
