@@ -113,7 +113,9 @@ class EVEController extends Controller
         ]);
         $this->http_logger($token->character_id, $curl_request);
         if ($curl_request->error) {
-            return false;
+            $token->disabled = 1;
+            $token->save();
+            return $token;
         }
         $token->access_token = $curl_request->response->access_token;
         $token->refresh_token = $curl_request->response->refresh_token;
@@ -121,6 +123,21 @@ class EVEController extends Controller
         $token->save();
 
         return $token;
+    }
+
+    public function post_refresh_token (Token $token)
+    {
+        $curl_request = $this->curl_request([
+            ['key' => "Authorization",'value' => base64_encode(config("services.eve.client_id").":".config("services.eve.client_secret"))],
+            ['key' => "Content-Type",'value' => "application/json"],
+            ['key' => "Host",'value' => "login.eveonline.com"],
+            ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]
+        ], 'post', config('services.eve.oauth_url')."/oauth/token", [
+            'grant_type' => "refresh_token",
+            'refresh_token' => $token->refresh_token
+        ]);
+        //$this->http_logger($token->character_id, $curl_request);
+        return $curl_request;
     }
     public function get_search($search_string)
     {

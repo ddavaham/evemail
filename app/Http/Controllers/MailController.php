@@ -370,6 +370,13 @@ class MailController extends Controller
 
     public function refresh_token (Token $token)
     {
+<<<<<<< Updated upstream
+=======
+
+        if ($token->disabled) {
+            return null;
+        }
+>>>>>>> Stashed changes
         if (Carbon::now()->toDateTimeString() > $token->token_expiry) {
             return $this->eve->refresh_token($token);
         }
