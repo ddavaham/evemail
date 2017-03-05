@@ -219,7 +219,7 @@ class MailController extends Controller
     public function get_character_mail_headers (Token $token)
     {
 
-        $token = $this->token->update_token(Token::where('character_id', Auth::user()->character_id)->first());
+        $token = $this->token->update_token(Token::where('character_id', $token->character_id)->first());
         if ($token === false) {
             $request->session()->flash('alert', [
                 "header" => "Disabled Token Detected.",
