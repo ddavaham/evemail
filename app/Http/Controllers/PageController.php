@@ -13,6 +13,7 @@ use EVEMail\MailLabel;
 use EVEMail\MailList;
 use EVEMail\MailRecipient;
 use EVEMail\Http\Controllers\MailController;
+use EVEMail\Http\Controllers\TokenController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,11 +22,22 @@ class PageController extends Controller
     public function __construct()
     {
         $this->mail = new MailController();
+        $this->token = new TokenController();
     }
 
     public function index ()
     {
         return view('home');
+    }
+
+    public function about_us ()
+    {
+        return view('about');
+    }
+
+    public function services ()
+    {
+        return view('services');
     }
 
     public function dashboard (Request $request, $label = null)
@@ -804,16 +816,16 @@ class PageController extends Controller
     }
 
 
-    // public function maintanence()
-    // {
-    //     foreach (MailRecipient::get() as $recipient) {
-    //         if ((is_null($recipient->character_id) || $recipient->character_id === "") && $recipient->recipient_type != "mailing_list") {
-    //             MailRecipient::where('recipient_id', $recipient->recipient_id)->update([
-    //                 'character_id' => $recipient->recipient_id
-    //             ]);
-    //         }
-    //     }
-    //
-    // }
+    public function maintanence()
+    {
+
+        foreach (MailRecipient::get() as $recipient) {
+            if ((is_null($recipient->character_id) || $recipient->character_id === "") && $recipient->recipient_type != "mailing_list") {
+                MailRecipient::where('recipient_id', $recipient->recipient_id)->update([
+                    'character_id' => $recipient->recipient_id
+                ]);
+            }
+        }
+    }
 
 }
