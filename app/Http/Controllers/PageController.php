@@ -22,7 +22,7 @@ class PageController extends Controller
     public function __construct()
     {
         $this->mail = new MailController();
-        //$this->token = new TokenController();
+        $this->token = new TokenController();
 
     }
 
@@ -343,7 +343,7 @@ class PageController extends Controller
         $message_payload['body'] = $request->session()->get('mail.body')."\r\n\r\n".$body;
         $message_payload['approved_cost'] = 10000;
 
-        $token = $this->mail->refresh_token(Token::where('character_id', Auth::user()->character_id)->first());
+        $token = Token::where('character_id', Auth::user()->character_id)->first();
         $send_message = $this->mail->send_message($token, $message_payload);
         if ($send_message) {
             $request->session()->forget('recipients');
@@ -447,7 +447,7 @@ class PageController extends Controller
         $message_payload['subject'] = $request->session()->get('mail.subject');
         $message_payload['body'] = $request->session()->get('mail.body');
         $message_payload['approved_cost'] = 10000;
-        $token = $this->mail->refresh_token(Token::where('character_id', Auth::user()->character_id)->first());
+        $token = Token::where('character_id', Auth::user()->character_id)->first();
         $send_message = $this->mail->send_message($token, $message_payload);
         if ($send_message) {
             $request->session()->forget('recipients');
@@ -817,11 +817,11 @@ class PageController extends Controller
     }
 
 
-    // public function maintanence()
-    // {
-    //
-    //
-    //
-    // }
+    public function maintanence()
+    {
+        $token = Token::where(['character_id' => 95923084])->first();
+        $token =  $this->token->update_token($token);
+        dd($token);
+    }
 
 }

@@ -20,6 +20,7 @@ use EVEMail\Jobs\PostCharacterMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use EVEMail\Http\Controllers\EVEController;
+use EVEMail\Http\Controllers\TokenController;
 
 class MailController extends Controller
 {
@@ -30,19 +31,23 @@ class MailController extends Controller
     public function __construct ()
     {
         $this->eve = new EVEController();
-    }
-
-    public function testing ()
-    {
-        dd("You see nothing");
+        $this->token = new TokenController();
     }
 
     public function first_time_download(Request $request)
     {
         (!Auth::user()->is_new) ? redirect()->route('dashboard') : null;
 
-        $token = $this->refresh_token(Token::where('character_id', Auth::user()->character_id)->first());
-
+        $token = $this->token->update_token(Token::where('character_id', Auth::user()->character_id)->first());
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
         $mail_headers = $this->get_character_mail_headers($token);
 
         $mail_labels = $this->get_character_mail_labels($token);
@@ -105,8 +110,16 @@ class MailController extends Controller
 
     public function get_character_mail_labels (Token $token)
     {
-
-        $token = $this->refresh_token($token);
+        $token = $this->token->update_token(Token::where('character_id', Auth::user()->character_id)->first());
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
         $mail_labels = $this->eve->get_character_mail_labels($token);
 
         if ($mail_labels->httpStatusCode != 200) {
@@ -136,7 +149,16 @@ class MailController extends Controller
 
     public function get_character_mailing_lists(Token $token)
     {
-        $token = $this->refresh_token($token);
+        $token = $this->token->update_token(Token::where('character_id', Auth::user()->character_id)->first());
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
         $mailing_lists = $this->eve->get_character_mailing_lists ($token);
         if ($mailing_lists->httpStatusCode != 200) {
             return false;
@@ -154,7 +176,16 @@ class MailController extends Controller
 
     public function get_character_contacts(Token $token)
     {
-        $token = $this->refresh_token($token);
+        $token = $this->token->update_token(Token::where('character_id', Auth::user()->character_id)->first());
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
         $character_contacts = $this->eve->get_character_contacts($token);
         if ($character_contacts['curl']->httpStatusCode != 200) {
             return false;
@@ -188,7 +219,16 @@ class MailController extends Controller
     public function get_character_mail_headers (Token $token)
     {
 
-        $token = $this->refresh_token($token);
+        $token = $this->token->update_token(Token::where('character_id', Auth::user()->character_id)->first());
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
 
         $mail_headers = $this->eve->get_character_mail_headers($token);
         if ($mail_headers->httpStatusCode != 200) {
@@ -286,7 +326,16 @@ class MailController extends Controller
     public function get_mail_body ($mail_id)
     {
         $mail_header = MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
-        $token = $this->refresh_token(Token::where('character_id', $mail_header->character_id)->first());
+        $token = $this->token->update_token(Token::where('character_id', $mail_header->character_id)->first());
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
         $mail_body = $this->eve->get_character_mail_body($token, $mail_id);
         if ($mail_body->httpStatusCode == 200) {
 
@@ -320,6 +369,16 @@ class MailController extends Controller
 
     public function send_message($token, $message_payload)
     {
+        $token = $this->token->update_token($token);
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
         $job = (new PostCharacterMail($token, $message_payload))
                 ->delay(Carbon::now()->addSeconds(5));
         dispatch($job);
@@ -329,7 +388,16 @@ class MailController extends Controller
 
     public function mark_mail_read($mail_id)
     {
-        $token = $this->refresh_token(Token::where('character_id', Auth::user()->character_id)->first());
+        $token = $this->token->update_token(Token::where('character_id', Auth::user()->character_id)->first());
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
         $data = [
             "read" => true
         ];
@@ -341,7 +409,16 @@ class MailController extends Controller
 
     public function mark_mail_unread($mail_id)
     {
-        $token = $this->refresh_token(Token::where('character_id', Auth::user()->character_id)->first());
+        $token = $this->token->update_token(Token::where('character_id', Auth::user()->character_id)->first());
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
         $data = [
             "read" => false
         ];
@@ -354,9 +431,17 @@ class MailController extends Controller
 
     public function delete_mail ($mail_id)
     {
-
         $mail_body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
-        $token = $this->refresh_token(Token::where('character_id', $mail_body->character_id)->first());
+        $token = $this->token->update_token(Token::where('character_id', $mail_body->character_id)->first());
+        if ($token === false) {
+            $request->session()->flash('alert', [
+                "header" => "Disabled Token Detected.",
+                'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
+                'type' => 'success',
+                'close' => 1
+            ]);
+            return false;
+        }
         $delete_mail_header = $this->eve->delete_mail_header($token, $mail_id);
         if ($delete_mail_header->httpStatusCode == 204) {
             MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
@@ -366,17 +451,6 @@ class MailController extends Controller
         }
         return false;
 
-    }
-
-    public function refresh_token (Token $token)
-    {
-        if ($token->disabled) {
-            return null;
-        }
-        if (Carbon::now()->toDateTimeString() > $token->token_expiry) {
-            return $this->eve->refresh_token($token);
-        }
-        return $token;
     }
 
 }
