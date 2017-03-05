@@ -102,31 +102,6 @@ class EVEController extends Controller
         return $curl_request;
     }
 
-    public function refresh_token (Token $token)
-    {
-        $curl_request = $this->curl_request([
-            ['key' => "Authorization",'value' => base64_encode(config("services.eve.client_id").":".config("services.eve.client_secret"))],
-            ['key' => "Content-Type",'value' => "application/json"],
-            ['key' => "Host",'value' => "login.eveonline.com"],
-            ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]
-        ], 'post', config('services.eve.oauth_url')."/oauth/token", [
-            'grant_type' => "refresh_token",
-            'refresh_token' => $token->refresh_token
-        ]);
-        $this->http_logger($token->character_id, $curl_request);
-        if ($curl_request->error) {
-            $token->disabled = 1;
-            $token->save();
-            return $token;
-        }
-        $token->access_token = $curl_request->response->access_token;
-        $token->refresh_token = $curl_request->response->refresh_token;
-        $token->token_expiry = Carbon::now()->addMinutes(20)->toDateTimeString();
-        $token->save();
-
-        return $token;
-    }
-
     public function post_refresh_token (Token $token)
     {
         $curl_request = $this->curl_request([
@@ -138,7 +113,7 @@ class EVEController extends Controller
             'grant_type' => "refresh_token",
             'refresh_token' => $token->refresh_token
         ]);
-        //$this->http_logger($token->character_id, $curl_request);
+        $this->http_logger($token->character_id, $curl_request);
         return $curl_request;
     }
     public function get_search($search_string)
