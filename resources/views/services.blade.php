@@ -21,37 +21,38 @@
         </div>
 		<div class="row">
             <div class="col-lg-8 col-lg-offset-2">
-                <h3 class="page-header">What is EVEMail</h3>
+                <h3 class="page-header">EVEMail Synchronization</h3>
 				<p>
-					EVEMail is system that is designed to make it easy for you to stay in touch with members of a community that so many of us have come to love and enjoy.  It allows you to seamlessly login and check your mail and easily reply to that mail knowing full well that that response will be delivered to that recipient.
+                    Using the ESI API from CCP, EVEMail is able to keep you up-to-date with the on going is EVE Online via your EVEMails. What does this really mean though? When you log into EVEMail, a unique token ties you account on EVEMail with you Character in EVE Online. Using this unique token, EVEMail Servers make periodic requests to CCP to see if you inbox has any unread and/or new mail. If you do, we update our database. That is it. This prevent you from logging into an inbox of 20+ unread EVEMails. You can log in periodically throughout the day, respond to unread mails, and then log out knowing that business is handled.
 				</p>
             </div>
         </div>
 		<div class="row">
             <div class="col-lg-8 col-lg-offset-2">
-                <h3 class="page-header">Why EVEMails</h3>
+                <h3 class="page-header">Unread/New Mail Notification</h3>
 				<p>
-					EVEMail was chosen because the developer knew beyond a shadow of a doubt that he could create a reliable system that people would enjoy using and find comfort in, knowing that the Mail that was being transmitted via his system was secure, was unsaleable, and uncompromising.
+					EVEMail features and Email Notification system that will ping you when we detect that you have a new mail in your inbox. Using the magic of the internet, you can opt into having this notification along with a specialized one time authorization link emailed to you. You open the mail in you email inbox, and read the message. If you would like to tell the system that you acknowledge the message and mark it as read, you can click on the link and by routed directly to the that message in your inbox and the mail will be marked as read, both locally and in EVEOnline. From there you can delete or update the mail.
 				</p>
             </div>
         </div>
 		<div class="row">
             <div class="col-lg-8 col-lg-offset-2">
-                <h3 class="page-header">About the Developer</h3>
+                <hr>
 				<p>
-					EVEMail was created by David Davaham. An industrialist at heart, David spends most of his time write code and developing websites. EVEMail is David’s first website publish on the internet for public use. In real life, David works in the Information Technology Field as a Service Desk Specialist on the Internal Service Desk for his company. EVEMail was built in his free time between calls and when not working on schoolwork.
+					Right now, these are all of the features that EVEMail update, but there are pleanty more on the way. Please stay tune for the last updates to EVEOnline by following our forum thread on the EVEOnline Forums, linked below, and if you are a code monkey, you can check out our Github repo, also linked below.
 				</p>
             </div>
         </div>
 		<div class="row">
             <div class="col-lg-8 col-lg-offset-2">
-                <h3 class="page-header">Would you like to know more?</h3>
-				<p>
-					EVEmail's Code is publicaly available and constantly updated. View it yourself by visiting our <a href="https://github.com/evemail/evemail">Github Page</a>.
-
-					<!-- Stay update on the changes going on within the EVEMail system by subscibing to our mailing list in game (Not actually. I haven't made it yet) -->
-				</p>
-
+                <div class="row">
+                    <div class="col-md-6">
+                        <a href="https://forums.eveonline.com/default.aspx?g=posts&t=511993" class="btn btn-primary btn-block">EVEOnline Forum Thread</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="https://github.com/evemail/evemail" class="btn btn-primary btn-block">GitHub Repo</a>
+                    </div>
+                </div>
             </div>
         </div>
 
