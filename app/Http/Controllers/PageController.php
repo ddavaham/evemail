@@ -22,7 +22,11 @@ class PageController extends Controller
     public function __construct()
     {
         $this->mail = new MailController();
+<<<<<<< HEAD
         //$this->token = new TokenController();
+=======
+        $this->token = new TokenController();
+>>>>>>> dev-new
     }
 
     public function index ()
@@ -816,16 +820,11 @@ class PageController extends Controller
     }
 
 
-    public function maintanence()
-    {
-
-        foreach (MailRecipient::get() as $recipient) {
-            if ((is_null($recipient->character_id) || $recipient->character_id === "") && $recipient->recipient_type != "mailing_list") {
-                MailRecipient::where('recipient_id', $recipient->recipient_id)->update([
-                    'character_id' => $recipient->recipient_id
-                ]);
-            }
-        }
-    }
+    // public function maintanence()
+    // {
+    //
+    //
+    //
+    // }
 
 }
