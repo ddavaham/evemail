@@ -64,4 +64,4 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/welcome/download', 'MailController@first_time_download')->name('dashboard.welcome.download');
 });
 
-// Route::get('/testing', 'PageController@maintanence');
+Route::get('/testing', 'PageController@maintanence');

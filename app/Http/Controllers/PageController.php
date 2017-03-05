@@ -22,7 +22,7 @@ class PageController extends Controller
     public function __construct()
     {
         $this->mail = new MailController();
-        $this->token = new TokenController();
+        //$this->token = new TokenController();
     }
 
     public function index ()
