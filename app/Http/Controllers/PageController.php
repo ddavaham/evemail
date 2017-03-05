@@ -478,10 +478,11 @@ class PageController extends Controller
         if (is_null($header)) {
             $request->session()->flash('alert', [
                 "header" => "Houston, We have an problem",
-                'message' => "The mail you are requesting does not exist in our database. Please hold tight and see if our minions can find it.",
+                'message' => "The mail you are requesting does not exist in our database. To be safe, we have deleted it from our database. If it exists, we will detect it the next time you log in.",
                 'type' => 'info',
                 'close' => 1
             ]);
+            MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->delete();
             return redirect()->route('dashboard');
         }
 
@@ -521,10 +522,11 @@ class PageController extends Controller
             if (!$retrieve_body) {
                 $request->session()->flash('alert', [
                     "header" => "Houston, We have an problem",
-                    'message' => "The mail you are requesting does not exist in our database nor are we able to retreive it from CCP. Please check to see if the mail exists via the EVE Online Client.",
+                    'message' => "The mail you are requesting does not exist in our database nor are we able to retreive it from CCP. That mail has probably been deleted in game or by another mail client. To be safe, we have deleted it from our database. If it exists, we will detect it the next time you log in.",
                     'type' => 'info',
                     'close' => 1
                 ]);
+                MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->delete();
                 return redirect()->route('dashboard');
             }
             $body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
