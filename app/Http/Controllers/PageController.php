@@ -87,6 +87,10 @@ class PageController extends Controller
         $token = Token::where('character_id', Auth::user()->character_id)->first();
         $update_headers = $this->mail->get_character_mail_headers($token);
         if ($update_headers) {
+            MailHeaderUpdate::firstOrCreate([
+                'character_id' => Auth::user()->character_id,
+                'last_header_update' => Carbon::now()->toDateTimeString()
+            ]);
             $request->session()->flash('alert', [
                 "header" => "Mailbox Updated Successfully",
                 'message' => "We have successfully updated your inbox.",
@@ -102,7 +106,7 @@ class PageController extends Controller
                 'type' => 'danger',
                 'close' => 1
             ]);
-            return redirect()->route('dashboard', ['label_id' => 1]);
+            return redirect()->route('dashboard');
         }
     }
 

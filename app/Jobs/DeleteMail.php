@@ -5,7 +5,7 @@ namespace EVEMail\Jobs;
 use EVEMail\MailBody;
 use EVEMail\MailHeader;
 use EVEMail\Token;
-use EVEMail\Http\Controller\EVEController;
+use EVEMail\Http\Controller\HTTPController;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -25,7 +25,7 @@ class DeleteMail implements ShouldQueue
     {
         $this->mail_id = $mail_id;
         $this->token = $token;
-        $this->eve = new EVEController();
+        $this->http = new HTTPController();
         $this->mail = new MailController();
 
     }
@@ -39,7 +39,7 @@ class DeleteMail implements ShouldQueue
     {
         $mail_body = MailBody::where(['character_id' => $this->token->character_id, 'mail_id' => $mail_id])->first();
         $token = $this->mail->refresh_token(Token::where('character_id', $mail_body->character_id)->first());
-        $delete_mail_header = $this->eve->delete_mail_header($token, $mail_id);
+        $delete_mail_header = $this->http->delete_mail_header($token, $mail_id);
         MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
         MailBody::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
 

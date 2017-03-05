@@ -8,7 +8,6 @@ use EVEMail\Token;
 use EVEMail\Jobs\GetCharacterMailHeaders;
 use EVEMail\MailHeaderUpdate;
 use EVEMail\Http\Controllers\MailController;
-use EVEMail\Http\Controllers\EVEController;
 use Illuminate\Console\Command;
 
 class MailHeaderUpdater extends Command

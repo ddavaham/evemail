@@ -4,16 +4,16 @@ namespace EVEMail\Http\Controllers;
 
 use Carbon\Carbon;
 use EVEMail\Token;
-use EVEMail\Http\Controllers\EVEController;
+use EVEMail\Http\Controllers\HTTPController;
 use Illuminate\Http\Request;
 
 class TokenController extends Controller
 {
-	public $eve;
+	public $http;
 
 	public function __construct ()
 	{
-		$this->eve = new EVEController();
+		$this->http = new HTTPController();
 	}
 
 	public function update_token(Token $token)
@@ -23,7 +23,7 @@ class TokenController extends Controller
         }
 
         if (Carbon::now()->toDateTimeString() > $token->token_expiry) {
-			$new_token = $this->eve->post_refresh_token($token);
+			$new_token = $this->http->post_refresh_token($token);
 			if ($new_token->httpStatusCode == 200) {
 				$token->access_token = $new_token->response->access_token;
 				$token->refresh_token = $new_token->response->refresh_token;

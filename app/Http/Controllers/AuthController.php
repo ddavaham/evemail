@@ -35,8 +35,8 @@ class AuthController extends Controller
 
     public function callback ()
     {
-        $eve = new EVEController();
-        $oauth_verify_auth_code = $eve->oauth_verify_auth_code($this->request->get('code'));
+        $http = new HTTPController();
+        $oauth_verify_auth_code = $http->oauth_verify_auth_code($this->request->get('code'));
 
         if ($oauth_verify_auth_code->httpStatusCode != 200) {
             $this->request->session()->flash('alert', [
@@ -47,7 +47,7 @@ class AuthController extends Controller
             ]);
             return redirect()->route('login');
         }
-        $oauth_verify_access_token = $eve->oauth_verify_access_token($oauth_verify_auth_code->response->access_token);
+        $oauth_verify_access_token = $http->oauth_verify_access_token($oauth_verify_auth_code->response->access_token);
         if ($oauth_verify_access_token->httpStatusCode != 200) {
             $this->request->session()->flash('alert', [
                 "header" => "SSO Error",
@@ -68,7 +68,7 @@ class AuthController extends Controller
             return redirect()->route('login');
         }
 
-        $esi_character_data = $eve->get_character_data($oauth_verify_access_token->response->CharacterID);
+        $esi_character_data = $http->get_character_data($oauth_verify_access_token->response->CharacterID);
         if ($esi_character_data->httpStatusCode !== 200) {
             $this->request->session()->flash('alert', [
                 "header" => "Unable to Verify Character Details",

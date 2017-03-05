@@ -7,7 +7,7 @@ use EVEMail\Token;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
-use EVEMail\Http\Controllers\EVEController;
+use EVEMail\Http\Controllers\HTTPController;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 
@@ -15,7 +15,7 @@ class UpdateMetaData implements ShouldQueue
 {
     use InteractsWithQueue, Queueable, SerializesModels;
 
-    public $token, $data, $eve, $mail_id;
+    public $token, $data, $http, $mail_id;
 
     /**
      * Create a new job instance.
@@ -24,7 +24,7 @@ class UpdateMetaData implements ShouldQueue
      */
     public function __construct(Token $token, $mail_id, $data)
     {
-        $this->eve = new EVEController();
+        $this->http = new HTTPController();
         $this->mail_id = $mail_id;
         $this->data = $data;
         $this->token = $token;
@@ -37,6 +37,6 @@ class UpdateMetaData implements ShouldQueue
      */
     public function handle()
     {
-        $this->eve->update_mail_header($this->token, $this->mail_id, $this->data);
+        $this->http->update_mail_header($this->token, $this->mail_id, $this->data);
     }
 }

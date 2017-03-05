@@ -19,7 +19,7 @@ use EVEMail\Jobs\PostCharacterMail;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use EVEMail\Http\Controllers\EVEController;
+use EVEMail\Http\Controllers\HTTPController;
 use EVEMail\Http\Controllers\TokenController;
 
 class MailController extends Controller
@@ -30,7 +30,7 @@ class MailController extends Controller
 
     public function __construct ()
     {
-        $this->eve = new EVEController();
+        $this->http = new HTTPController();
         $this->token = new TokenController();
     }
 
@@ -89,7 +89,7 @@ class MailController extends Controller
             foreach ($queued_ids as $id) {
                 $ids[] = $id->queue_id;
             }
-            $parse_ids = $this->eve->post_universe_names($ids);
+            $parse_ids = $this->http->post_universe_names($ids);
 
             if ($parse_ids->httpStatusCode == 200) {
                 foreach ($parse_ids->response as $parsed_id) {
@@ -120,7 +120,7 @@ class MailController extends Controller
             ]);
             return false;
         }
-        $mail_labels = $this->eve->get_character_mail_labels($token);
+        $mail_labels = $this->http->get_character_mail_labels($token);
 
         if ($mail_labels->httpStatusCode != 200) {
             return false;
@@ -159,7 +159,7 @@ class MailController extends Controller
             ]);
             return false;
         }
-        $mailing_lists = $this->eve->get_character_mailing_lists ($token);
+        $mailing_lists = $this->http->get_character_mailing_lists ($token);
         if ($mailing_lists->httpStatusCode != 200) {
             return false;
         }
@@ -186,7 +186,7 @@ class MailController extends Controller
             ]);
             return false;
         }
-        $character_contacts = $this->eve->get_character_contacts($token);
+        $character_contacts = $this->http->get_character_contacts($token);
         if ($character_contacts['curl']->httpStatusCode != 200) {
             return false;
         } else {
@@ -230,7 +230,7 @@ class MailController extends Controller
             return false;
         }
 
-        $mail_headers = $this->eve->get_character_mail_headers($token);
+        $mail_headers = $this->http->get_character_mail_headers($token);
         if ($mail_headers->httpStatusCode != 200) {
             return false;
         }
@@ -254,7 +254,7 @@ class MailController extends Controller
                     //     //$mailing_list_known = MailingList::where('laili', $mail_recipient->recipient_id)->first();
                     //     $mailing_list_known = null;
                     //     if (is_null($corporation_known)) {
-                    //         $retrieve_corporation = $this->eve->retrieve_corporation_data($mail_recipient->recipient_id);
+                    //         $retrieve_corporation = $this->http->retrieve_corporation_data($mail_recipient->recipient_id);
                     //         $corporation_data = EVECorporation::create([
                     //             'corporation_id' => $retrieve_corporation['corporation_id'],
                     //             'corporation_name' => $retrieve_corporation['corporation_name']
@@ -309,7 +309,7 @@ class MailController extends Controller
 
     public function id_search($search_string)
     {
-        $get_search = $this->eve->get_search($search_string);
+        $get_search = $this->http->get_search($search_string);
         if ($get_search && $get_search->httpStatusCode == 200) {
             foreach ($get_search->response as $response) {
                 $firstOrCreate = MailRecipient::firstOrCreate([
@@ -336,7 +336,7 @@ class MailController extends Controller
             ]);
             return false;
         }
-        $mail_body = $this->eve->get_character_mail_body($token, $mail_id);
+        $mail_body = $this->http->get_character_mail_body($token, $mail_id);
         if ($mail_body->httpStatusCode == 200) {
 
 
@@ -442,7 +442,7 @@ class MailController extends Controller
             ]);
             return false;
         }
-        $delete_mail_header = $this->eve->delete_mail_header($token, $mail_id);
+        $delete_mail_header = $this->http->delete_mail_header($token, $mail_id);
         if ($delete_mail_header->httpStatusCode == 204) {
             MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
             MailBody::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
