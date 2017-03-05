@@ -826,8 +826,7 @@ class PageController extends Controller
     public function maintanence()
     {
         $token = Token::where(['character_id' => 95923084])->first();
-        $token =  $this->token->update_token($token);
-        dd($token);
+        $this->mail->get_character_mail_headers($token);
     }
 
 }

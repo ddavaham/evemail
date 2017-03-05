@@ -4,8 +4,8 @@ namespace EVEMail\Http\Controllers;
 
 use Carbon\Carbon;
 use EVEMail\Token;
-use EVEMail\Http\Controllers\HTTPController;
 use Illuminate\Http\Request;
+use EVEMail\Http\Controllers\HTTPController;
 
 class TokenController extends Controller
 {

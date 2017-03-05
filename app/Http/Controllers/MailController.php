@@ -26,7 +26,7 @@ class MailController extends Controller
 {
 
 
-    private $token, $queueTable;
+    private $token, $http;
 
     public function __construct ()
     {
@@ -218,7 +218,6 @@ class MailController extends Controller
 
     public function get_character_mail_headers (Token $token)
     {
-
         $token = $this->token->update_token(Token::where('character_id', $token->character_id)->first());
         if ($token === false) {
             $request->session()->flash('alert', [
