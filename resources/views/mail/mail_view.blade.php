@@ -62,7 +62,7 @@
                         </tr>
                         <tr>
                             <td>
-                                Date:
+                                Date Sent:
                             </td>
                             <td>
 
