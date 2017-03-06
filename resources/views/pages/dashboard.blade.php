@@ -40,7 +40,7 @@
                                     <div class="col-md-11 col-sm-12 col-xs-12">
                                         <h4 class="list-group-item-heading">{{ $header->mail_subject }}</h4>
                                         <p class="list-group-item-text">
-                                            <em>Mail Sent by {{ $header->recipient_name }}</em>
+                                            <em>Mail Sent by {{ $header->recipient_name }} on {{ \Carbon\Carbon::createFromTimestamp(strtotime($header->mail_sent_date))->toDayDateTimeString() }}</em>
                                         </p>
                                     </div>
                                 </div>
