@@ -82,7 +82,7 @@
                                 <a href="{{ route('mail.reply.build', ['mail_id' => $header->mail_id, 'first_time' => 1]) }}" class="btn btn-primary btn-block @if($header->mail_sender == Auth::user()->character_id) disabled @endif">Reply To All</a>
                             </div>
                             <div class="col-md-4">
-                                <!-- <a href="#" class="btn btn-danger btn-block">Delete This Message</a> -->
+                                
                                 <button type="button" class="btn btn-danger btn-block" data-toggle="modal" data-target="#deleteMailModel">
                                     Delete this Mail
                                 </button>

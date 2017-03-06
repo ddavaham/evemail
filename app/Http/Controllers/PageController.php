@@ -72,12 +72,6 @@ class PageController extends Controller
         ]);
     }
 
-    public function settings()
-    {
-        return view ('pages.settings');
-    }
-
-
     public function dashboard_welcome()
     {
         return view('pages.welcome');

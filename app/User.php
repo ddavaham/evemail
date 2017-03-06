@@ -11,7 +11,7 @@ class User extends Authenticatable
 
     protected $primaryKey = 'character_id';
     protected $fillable = [
-        "character_id","character_name","corporation_id","alliance_id","time_zone","time_notation", 'is_new'
+        "character_id","character_name","corporation_id","alliance_id","time_zone","time_notation", 'is_new', 'preferences'
     ];
 
     public function getRememberToken()
@@ -40,4 +40,11 @@ class User extends Authenticatable
           parent::setAttribute($key, $value);
         }
     }
+
+    public function email ()
+    {
+        return $this->hasOne('EVEMail\UserEmail', 'character_id');
+    }
+
+
 }

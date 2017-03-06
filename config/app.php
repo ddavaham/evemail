@@ -12,7 +12,7 @@ return [
     | any other location as required by the application or its packages.
     */
 
-    'name' => 'Laravel',
+    'name' => 'EVEMail',
 
     /*
     |--------------------------------------------------------------------------
@@ -227,5 +227,11 @@ return [
         'View' => Illuminate\Support\Facades\View::class,
 
     ],
+
+    'static_attributes' => [
+        'preferences' => [
+            ['name' => "New Mail Notifications", 'description' => 'Receive Notifications about new mails in your inbox when the system detects them','value' => 'new_mail_notifications']
+        ]
+    ]
 
 ];

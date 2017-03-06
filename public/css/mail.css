@@ -84,6 +84,12 @@ footer {
   border-bottom: 1px solid #eeeeee;
 }
 
+.section-header {
+  padding-bottom: 9px;
+  margin: 10px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+
 /* Responsive Styles */
 
 @media(max-width:991px) {

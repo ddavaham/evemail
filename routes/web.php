@@ -33,9 +33,6 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/mail/new/preview', 'PageController@mail_send_preview')->name('mail.send.preview');
     Route::get('/mail/new/send', 'PageController@mail_send_send')->name('mail.send.send');
 
-
-
-
     Route::get('/mail/reset',  'PageController@mail_reset')->name('mail.reset');
 
     Route::get('/mail/new/recipient/{recipient_id?}', 'PageController@add_recipient')->name('mail.send.recipient')->where('recipient_id', "[0-9]+");
@@ -56,9 +53,15 @@ Route::group(['middleware' => 'auth'], function () {
 
 
 
-    Route::get('/settings', 'PageController@settings')->name('settings');
-    Route::get('/settings/update/labels', 'PageController@update_mail_labels')->name('settings.labels');
-    Route::get('/settings/update/mailing_lists', 'PageController@update_mailing_lists')->name('settings.mailing_lists');
+    Route::get('/settings', 'SettingsController@overview')->name('settings');
+    Route::post('/settings', 'SettingsController@overview')->name('settings.post');
+    Route::get('/settings/email', 'SettingsController@email')->name('settings.email');
+    Route::post('/settings/email', 'SettingsController@email')->name('settings.email.post');
+    Route::get('/settings/email/verify/{vCode?}', 'SettingsController@verify')->name('settings.email.verify');
+    Route::get('/settings/preferences', 'SettingsController@preferences')->name('settings.preferences');
+    Route::post('/settings/preferences', 'SettingsController@preferences')->name('settings.preferences.post');
+    Route::get('/settings/update/labels', 'SettingsController@construction')->name('settings.labels');
+    Route::get('/settings/update/mailing_lists', 'SettingsController@construction')->name('settings.mailing_lists');
 
     Route::get('/welcome', 'PageController@dashboard_welcome')->name('dashboard.welcome');
     Route::get('/welcome/download', 'MailController@first_time_download')->name('dashboard.welcome.download');

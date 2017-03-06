@@ -15,9 +15,9 @@ class CreateUserEmailsTable extends Migration
     {
         Schema::create('user_emails', function (Blueprint $table) {
             $table->bigInteger('character_id');
-            $table->string('character_email');
+            $table->string('character_email')->nullable();
             $table->string('email_verification_code')->nullable();
-            $table->boolean('email_opt_in');
+            $table->boolean('verified')->default(0);
             $table->timestamps();
 
             $table->primary('character_id');
