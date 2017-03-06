@@ -7,6 +7,7 @@ use Validator;
 use Session;
 use EVEMail\Token;
 use EVEMail\MailHeader;
+use EVEMail\MailHeaderUpdate;
 use Carbon\Carbon;
 use EVEMail\MailBody;
 use EVEMail\MailLabel;
