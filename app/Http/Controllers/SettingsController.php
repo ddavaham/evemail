@@ -144,7 +144,6 @@ class SettingsController extends Controller
             return redirect()->route('settings.preferences');
         }
         $preferences = json_decode(Auth::user()->preferences, true);
-        dump($preferences, config('app.static_attributes.preferences'));
         return view('settings.preferences', ['preferences' => $preferences]);
     }
 
