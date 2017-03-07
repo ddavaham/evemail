@@ -137,7 +137,7 @@ class SettingsController extends Controller
             }
             $request->session()->flash('alert', [
                 "header" => "Preferences Updated Successfully",
-                'message' => "Thank You for verifing your email address. Please proceed to your preferences now so that you can opt into the various features that are offered by EVEMail",
+                'message' => "Your preferences have been updated successsfully.",
                 'type' => 'info',
                 'close' => 1
             ]);

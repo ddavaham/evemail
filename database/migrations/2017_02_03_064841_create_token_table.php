@@ -18,6 +18,7 @@ class CreateTokenTable extends Migration
             $table->string('access_token');
             $table->string('refresh_token');
             $table->text('scopes');
+            $table->boolean('disabled')->default(0);
             $table->timestamp('token_expiry');
             $table->timestamps();
 

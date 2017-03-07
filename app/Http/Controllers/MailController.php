@@ -15,6 +15,7 @@ use EVEMail\CharacterContact;
 use EVEMail\Jobs\ProcessQueue;
 use EVEMail\Jobs\UpdateMetaData;
 use EVEMail\Jobs\PostCharacterMail;
+use EVEMail\Mail\NewMailNotification;
 
 
 use Illuminate\Http\Request;
@@ -450,6 +451,29 @@ class MailController extends Controller
         }
         return false;
 
+    }
+
+    public function check_for_unknwon_headers ($character_id) {
+        $user = User::findOrFail($character_id);
+
+        if (!isset($user->preferences()['new_mail_notifications']) || $user->preferences()['new_mail_notifications'] == 0) {
+            return false;
+        }
+        $get_mail_headers = MailHeader::where([
+            'character_id' => $user->character_id,
+            'is_known' => 0,
+            'is_read' => 0
+        ])->orderby('created_date', 'asc')->get();
+        foreach ($get_mail_headers as $k=>$header) {
+            $label_ids = explode(',',$header->mail_labels);
+            foreach ($label_ids as $label_id) {
+                if ($label_id == 2) {
+                    unset($get_mail_headers[$k]);
+                }
+            }
+        }
+
+        Mail::to()->send(new NewMailNotification($user, $get_mail_headers))
     }
 
 }

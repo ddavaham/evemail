@@ -45,6 +45,9 @@ class User extends Authenticatable
     {
         return $this->hasOne('EVEMail\UserEmail', 'character_id');
     }
-
+    public function preferences()
+    {
+        return json_decode($this->preferences, true);
+    }
 
 }

@@ -52,10 +52,10 @@ class HTTPController extends Controller
     }
 
 
-    public function http_logger($request_id, $data)
+    public function http_logger($request_id, $data, $requested_data)
     {
-        if ($data->httpStatusCode >= 300) {
-
+        //if ($data->httpStatusCode >= 300) {
+            $requested_data = json_encode($requested_data);
             HttpLogger::create([
                 'request_id' => $request_id,
                 'error' => $data->error,
@@ -69,10 +69,10 @@ class HTTPController extends Controller
                 'httpErrorMessage' => $data->httpErrorMessage,
                 'baseUrl' => $data->baseUrl,
                 'url' => $data->url,
-                'options' => json_encode((array)$data->options,true),
+                'requested_data' => $requested_data,
                 'response' => json_encode((array)$data->response,true)
             ]);
-        }
+        //}
     }
 
     public function oauth_verify_auth_code ($code)
@@ -86,7 +86,10 @@ class HTTPController extends Controller
             'code' => $code
         ]);
 
-        $this->http_logger(0, $curl_request);
+        $this->http_logger(0, $curl_request, [
+            'grant_type' => "authorization_code",
+            'code' => $code
+        ]);
         return $curl_request;
     }
 
@@ -98,7 +101,7 @@ class HTTPController extends Controller
             ['key' => "Host",'value' => "login.eveonline.com"],
             ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]
         ], 'get', config('services.eve.oauth_url')."/oauth/verify", []);
-        $this->http_logger(0, $curl_request);
+        $this->http_logger(0, $curl_request, ['access_token' => $access_token]);
         return $curl_request;
     }
 
@@ -113,7 +116,10 @@ class HTTPController extends Controller
             'grant_type' => "refresh_token",
             'refresh_token' => $token->refresh_token
         ]);
-        $this->http_logger($token->character_id, $curl_request);
+        $this->http_logger($token->character_id, $curl_request, [
+            'grant_type' => "refresh_token",
+            'refresh_token' => $token->refresh_token
+        ]);
         return $curl_request;
     }
     public function get_search($search_string)
@@ -125,7 +131,10 @@ class HTTPController extends Controller
             'search' => $search_string,
             'categories' => 'character'
         ], 200, 5);
-        $this->http_logger(Carbon::now()->timestamp, $curl_request);
+        $this->http_logger(Carbon::now()->timestamp, $curl_request, [
+            'search' => $search_string,
+            'categories' => 'character'
+        ]);
         if (count($curl_request->response->character) > 0) {
             $result = $this->post_universe_names($curl_request->response->character);
             return $result;
@@ -139,7 +148,7 @@ class HTTPController extends Controller
             ['key' => "Content-Type",'value' => "application/json"],
             ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]
         ], 'post', config('services.eve.esi_url')."/v2/universe/names/", json_encode($ids), 200);
-        $this->http_logger(Carbon::now()->timestamp, $curl_request);
+        $this->http_logger(Carbon::now()->timestamp, $curl_request, ['ids' => $ids]);
         return $curl_request;
     }
 
@@ -153,7 +162,7 @@ class HTTPController extends Controller
         ], 'get', config('services.eve.esi_url')."/v4/characters/{$character_id}/", [
             'datasource' => 'tranquility'
         ], 200, $loopCounter);
-        $this->http_logger($character_id, $curl_request);
+        $this->http_logger($character_id, $curl_request, null);
         return $curl_request;
     }
 
@@ -166,7 +175,7 @@ class HTTPController extends Controller
         ], 'get', config('services.eve.esi_url')."/v1/characters/{$token->character_id}/mail/", [
             'datasource' => 'tranquility'
         ]);
-        $this->http_logger($token->character_id, $curl_request);
+        $this->http_logger($token->character_id, $curl_request, null);
         return $curl_request;
     }
 
@@ -179,7 +188,7 @@ class HTTPController extends Controller
         ], 'get', config('services.eve.esi_url')."/v3/characters/{$token->character_id}/mail/labels/", [
             'datasource' => 'tranquility'
         ]);
-        $this->http_logger($token->character_id, $curl_request);
+        $this->http_logger($token->character_id, $curl_request, null);
         return $curl_request;
     }
 
@@ -192,7 +201,7 @@ class HTTPController extends Controller
         ], 'get', config('services.eve.esi_url')."/v1/characters/{$token->character_id}/mail/lists/", [
             'datasource' => 'tranquility'
         ]);
-        $this->http_logger($token->character_id, $curl_request);
+        $this->http_logger($token->character_id, $curl_request, null);
         return $curl_request;
     }
 
@@ -205,7 +214,7 @@ class HTTPController extends Controller
         ], 'get', config('services.eve.esi_url')."/v1/characters/{$token->character_id}/mail/{$mail_id}/", [
             'datasource' => 'tranquility'
         ]);
-        $this->http_logger($token->character_id, $curl_request);
+        $this->http_logger($token->character_id, $curl_request, null);
         return $curl_request;
     }
 
@@ -218,7 +227,9 @@ class HTTPController extends Controller
         ], 'put', config('services.eve.esi_url')."/v1/characters/{$token->character_id}/mail/{$mail_id}/", json_encode(array_merge($data, [
             'datasource' => 'tranquility'
         ]), JSON_FORCE_OBJECT), 204);
-        $this->http_logger($token->character_id, $curl_request);
+        $this->http_logger($token->character_id, $curl_request, array_merge($data, [
+            'datasource' => 'tranquility'
+        ]));
         return $curl_request;
     }
 
@@ -229,7 +240,7 @@ class HTTPController extends Controller
             ['key' => "Content-Type",'value' => "application/json"],
             ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]
         ], 'delete', config('services.eve.esi_url')."/v1/characters/{$token->character_id}/mail/{$mail_id}/", null, 204);
-        $this->http_logger($token->character_id, $curl_request);
+        $this->http_logger($token->character_id, $curl_request, null);
         return $curl_request;
     }
 
@@ -240,7 +251,7 @@ class HTTPController extends Controller
             ['key' => "Content-Type",'value' => "application/json"],
             ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]
         ], 'post', config('services.eve.esi_url')."/v1/characters/{$token->character_id}/mail/", json_encode($payload), 201);
-        $this->http_logger($token->character_id, $curl_request);
+        $this->http_logger($token->character_id, $curl_request, $payload);
         // if ($curl_request->httpStatusCode ==201){
         //     Log::info("Mail Sent Successfully. New Mail {$curl_request->response} generated");
         // }
@@ -269,7 +280,7 @@ class HTTPController extends Controller
 
                     foreach ((array)$curl_request->response as $contact) {
                         $character_contacts[] = $contact;
-                        $this->http_logger($token->character_id, $curl_request);
+                        $this->http_logger($token->character_id, $curl_request, null);
                     }
                 } else {
                     break 1;

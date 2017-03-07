@@ -18,6 +18,7 @@ class CreateUsersTable extends Migration
             $table->string('character_name');
             $table->integer('corporation_id');
             $table->integer('alliance_id')->nullable();
+            $table->text('preferences')->nullable();
             $table->string('time_zone')->default('UTC');
             $table->string('time_notation')->nullable();
             $table->boolean('is_new')->default(1);

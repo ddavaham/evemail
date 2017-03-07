@@ -34,7 +34,9 @@
         <!-- Content Column -->
         <div class="col-md-9">
             <h2 class="section-header">Settings Overview</h2>
-
+            <p>
+                This page is under construction. Please bear with us during this stage. You can still use the menu to the left to navigate thought the settings module
+            </p>
         </div>
     </div>
     <!-- /.row -->
