@@ -473,7 +473,7 @@ class MailController extends Controller
             }
         }
 
-        Mail::to()->send(new NewMailNotification($user, $get_mail_headers))
+        Mail::to()->send(new NewMailNotification($user, $get_mail_headers));
     }
 
 }
