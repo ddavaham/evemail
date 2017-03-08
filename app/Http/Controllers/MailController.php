@@ -475,8 +475,10 @@ class MailController extends Controller
             }
         }
 
-        Mail::to()->send(new NewMailNotification($user, $get_mail_headers));
-        $get_mail_headers->update
+        Mail::to($user->email()->first()->character_email)->send(new NewMailNotification($user, $get_mail_headers));
+        $get_mail_headers->update([
+            'is_known' => 1
+        ]);
     }
 
 }
