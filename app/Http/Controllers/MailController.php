@@ -2,6 +2,7 @@
 namespace EVEMail\Http\Controllers;
 
 use DB;
+use Mail;
 use Carbon\Carbon;
 use EVEMail\User;
 use EVEMail\Token;
@@ -473,7 +474,7 @@ class MailController extends Controller
             }
         }
 
-        Mail::to()->send(new NewMailNotification($user, $get_mail_headers));
+        Mail::to($user->email()->first()->character_email)->send(new NewMailNotification($user, $get_mail_headers));
     }
 
 }
