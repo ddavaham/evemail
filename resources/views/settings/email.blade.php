@@ -59,7 +59,8 @@
                         </div>
                     </form>
                 </div>
-                @if (Auth::user()->has('email')->first())
+                
+                @if (!is_null(Auth::user()->email()->first()))
                     <div class="col-md-6">
                         <ul class="list-group">
                             <li class="list-group-item text-center active">

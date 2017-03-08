@@ -12,4 +12,9 @@ class MailHeader extends Model
         'character_id','mail_id','mail_subject','mail_sender','mail_sent_date','mail_labels','mail_recipient','is_read'
     ];
 
+    public function sender()
+    {
+        return $this->hasOne('EVEMail\MailRecipient', 'recipient_id', 'mail_sender');
+    }
+
 }

@@ -87,11 +87,6 @@ class AuthController extends Controller
             'alliance_id' => (isset($esi_character_data->response->alliance_id)) ? $esi_character_data->response->alliance_id : null
         ]);
         $updateOrCreate->save();
-        if ($updateOrCreate->wasRecentlyCreated) {
-            User::find($oauth_verify_access_token->response->CharacterID)->email()->create([
-                'character_id' => $oauth_verify_access_token->response->CharacterID
-            ]);
-        }
         $user = User::find($oauth_verify_access_token->response->CharacterID);
 
         Auth::login($user);

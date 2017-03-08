@@ -2,6 +2,7 @@
 
 namespace EVEMail\Mail;
 
+use EVEMail\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
@@ -16,9 +17,10 @@ class NewMailNotification extends Mailable
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(User $user, $mail_headers)
     {
-        //
+        $this->user = $user;
+        $this->mail_headers = $mail_headers;
     }
 
     /**
@@ -28,6 +30,6 @@ class NewMailNotification extends Mailable
      */
     public function build()
     {
-        return $this->view('view.name');
+        return $this->$this->from('noreply@reply.evemail.space')->subject('You Have one or more New EVEMails')->view('email.new_mail');
     }
 }

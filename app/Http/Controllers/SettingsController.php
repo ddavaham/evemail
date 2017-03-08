@@ -47,7 +47,7 @@ class SettingsController extends Controller
                 return redirect()->route('settings.email');
             }
             if ($request->action === "create_character_email") {
-                if (is_null(Auth::user()->has('email')->first())) {
+                if (is_null(Auth::user()->email()->first())) {
                     $validator = Validator::make($request->all(), [
                         'email_address' => "required|min:5|email|unique:user_emails,character_email",
                         'email_address_confirm' => "required|same:email_address",
