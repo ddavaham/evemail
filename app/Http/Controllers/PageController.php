@@ -818,10 +818,9 @@ class PageController extends Controller
     }
 
 
-    public function maintanence()
-    {
-        $token = Token::where(['character_id' => 95923084])->first();
-        $this->mail->get_character_mail_headers($token);
-    }
+    // public function maintanence()
+    // {
+    //     $this->mail->check_for_unknown_headers(95923084);
+    // }
 
 }

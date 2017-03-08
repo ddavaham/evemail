@@ -12,6 +12,8 @@ class NewMailNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $user, $mail_headers;
+
     /**
      * Create a new message instance.
      *
@@ -30,6 +32,6 @@ class NewMailNotification extends Mailable
      */
     public function build()
     {
-        return $this->$this->from('noreply@reply.evemail.space')->subject('You Have one or more New EVEMails')->view('email.new_mail');
+        return $this->from('notifications@reply.evemail.space', "EVEMail Notifications")->subject('EVEMail Alert: You have new EVEMails')->view('email.new_mail');
     }
 }

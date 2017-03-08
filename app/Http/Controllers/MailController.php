@@ -26,8 +26,6 @@ use EVEMail\Http\Controllers\TokenController;
 
 class MailController extends Controller
 {
-
-
     private $token, $http;
 
     public function __construct ()
@@ -454,19 +452,21 @@ class MailController extends Controller
 
     }
 
-    public function check_for_unknwon_headers ($character_id) {
+    public function check_for_unknown_headers ($character_id) {
         $user = User::findOrFail($character_id);
 
         if (!isset($user->preferences()['new_mail_notifications']) || $user->preferences()['new_mail_notifications'] == 0) {
             return false;
         }
-        $get_mail_headers = MailHeader::where([
+        $mail_headers = MailHeader::where([
             'character_id' => $user->character_id,
             'is_known' => 0,
             'is_read' => 0
-        ])->orderby('created_date', 'asc');
-        if (!is_null($get_mail_headers)) {
-            foreach ($get_mail_headers->get() as $k=>$header) {
+        ])->orderby('created_at', 'desc');
+        $get_mail_headers = $mail_headers->get();
+        
+        if ($get_mail_headers->count() > 0) {
+            foreach ($get_mail_headers as $k=>$header) {
                 $label_ids = explode(',',$header->mail_labels);
                 foreach ($label_ids as $label_id) {
                     if ($label_id == 2) {
@@ -474,12 +474,10 @@ class MailController extends Controller
                     }
                 }
             }
+            Mail::to($user->email()->first()->character_email)->send(new NewMailNotification($user, $get_mail_headers));
+            $mail_headers->update([
+                'is_known' => 1
+            ]);
         }
-
-        Mail::to($user->email()->first()->character_email)->send(new NewMailNotification($user, $get_mail_headers));
-<<<<<<< HEAD
-        $get_mail_headers->update([
-            'is_known' => 1
-        ]);
     }
 }
