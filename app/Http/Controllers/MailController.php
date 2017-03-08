@@ -463,17 +463,20 @@ class MailController extends Controller
             'character_id' => $user->character_id,
             'is_known' => 0,
             'is_read' => 0
-        ])->orderby('created_date', 'asc')->get();
-        foreach ($get_mail_headers as $k=>$header) {
-            $label_ids = explode(',',$header->mail_labels);
-            foreach ($label_ids as $label_id) {
-                if ($label_id == 2) {
-                    unset($get_mail_headers[$k]);
+        ])->orderby('created_date', 'asc');
+        if (!is_null($get_mail_headers)) {
+            foreach ($get_mail_headers->get() as $k=>$header) {
+                $label_ids = explode(',',$header->mail_labels);
+                foreach ($label_ids as $label_id) {
+                    if ($label_id == 2) {
+                        unset($get_mail_headers[$k]);
+                    }
                 }
             }
         }
 
-        Mail::to()->send(new NewMailNotification($user, $get_mail_headers))
+        Mail::to()->send(new NewMailNotification($user, $get_mail_headers));
+        $get_mail_headers->update
     }
 
 }
