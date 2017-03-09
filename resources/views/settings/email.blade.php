@@ -50,7 +50,7 @@
                             <input type="email" name="email_address" id="email_address" class="form-control" value="{{ old('email_address') }}" placeholder="johndoe@example.com" />
                         </div>
                         <div class="form-group">
-                            <label for="">Confrim Email Address:</label>
+                            <label for="">Confirm Email Address:</label>
                             <input type="email" name="email_address_confirm" id="email_address_confirm" class="form-control" value="{{ old('email_address_confirm') }}" placeholder="johndoe@example.com" />
                         </div>
                         <div class="form_group">
@@ -59,7 +59,7 @@
                         </div>
                     </form>
                 </div>
-                
+
                 @if (!is_null(Auth::user()->email()->first()))
                     <div class="col-md-6">
                         <ul class="list-group">
