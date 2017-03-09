@@ -54,7 +54,7 @@ class HTTPController extends Controller
 
     public function http_logger($request_id, $data, $requested_data)
     {
-        //if ($data->httpStatusCode >= 300) {
+        if ($data->httpStatusCode >= 300) {
             $requested_data = json_encode($requested_data);
             HttpLogger::create([
                 'request_id' => $request_id,
@@ -72,7 +72,7 @@ class HTTPController extends Controller
                 'requested_data' => $requested_data,
                 'response' => json_encode((array)$data->response,true)
             ]);
-        //}
+        }
     }
 
     public function oauth_verify_auth_code ($code)

@@ -768,28 +768,30 @@ class PageController extends Controller
         $labels = explode(',', $header->mail_labels);
         foreach ($labels as $label) {
             $mail_label = MailLabel::where(['character_id' => $character_id, 'label_id' => $label])->first();
-            $unread_count = $mail_label->label_unread_count;
+            if (!is_null($mail_label)) {
+                $unread_count = $mail_label->label_unread_count;
 
 
-            if ($action === "add") {
-                $unread_count = $unread_count+1;
-            }
-            if ($action === "sub") {
-                if ($unread_count <= 0) {
-                    $request->session()->flash('alert', [
-                        "header" => "Houston, We have an problem",
-                        'message' => "Unread count for current label is zero, but you have mail that is unread for this label. Please click Update Mail Labels below so that we can resync your labels unread count to provide you an accurate count.",
-                        'type' => 'danger',
-                        'close' => 1
-                    ]);
-                    return redirect()->route('settings');
+                if ($action === "add") {
+                    $unread_count = $unread_count+1;
                 }
-                $unread_count = $unread_count-1;
-            }
+                if ($action === "sub") {
+                    if ($unread_count <= 0) {
+                        $request->session()->flash('alert', [
+                            "header" => "Houston, We have an problem",
+                            'message' => "Unread count for current label is zero, but you have mail that is unread for this label. Please click Update Mail Labels below so that we can resync your labels unread count to provide you an accurate count.",
+                            'type' => 'danger',
+                            'close' => 1
+                        ]);
+                        return redirect()->route('settings');
+                    }
+                    $unread_count = $unread_count-1;
+                }
 
-            MailLabel::where(['character_id' => $character_id, 'label_id' => $label])->update([
-                'label_unread_count' => $unread_count
-            ]);
+                MailLabel::where(['character_id' => $character_id, 'label_id' => $label])->update([
+                    'label_unread_count' => $unread_count
+                ]);
+            }
         }
     }
 
