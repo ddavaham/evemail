@@ -173,7 +173,7 @@ class MailController extends Controller
         return true;
 
     }
-
+    /*
     public function get_character_contacts(Token $token)
     {
         $token = $this->token->update_token(Token::where('character_id', Auth::user()->character_id)->first());
@@ -215,8 +215,8 @@ class MailController extends Controller
             return true;
         }
     }
-
-    public function get_character_mail_headers (Token $token)
+    */
+    public function get_character_mail_headers (Token $token, Request $request)
     {
         $token = $this->token->update_token(Token::where('character_id', $token->character_id)->first());
         if ($token === false) {
@@ -322,7 +322,7 @@ class MailController extends Controller
         return false;
     }
 
-    public function get_mail_body ($mail_id)
+    public function get_mail_body (Request $request, $mail_id)
     {
         $mail_header = MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
         $token = $this->token->update_token(Token::where('character_id', $mail_header->character_id)->first());
