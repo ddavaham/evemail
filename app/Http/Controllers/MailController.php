@@ -323,12 +323,11 @@ class MailController extends Controller
         return false;
     }
 
-    public function get_mail_body ($mail_id)
+    public function get_mail_body (Request $request, $mail_id)
     {
         $mail_header = MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
         $token = $this->token->update_token(Token::where('character_id', $mail_header->character_id)->first());
         if ($token === false) {
-            $request = new Request();
             $request->session()->flash('alert', [
                 "header" => "Disabled Token Detected.",
                 'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",

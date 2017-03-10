@@ -517,7 +517,7 @@ class PageController extends Controller
 
 
         if (is_null($body)) {
-            $retrieve_body = $this->mail->get_mail_body($mail_id);
+            $retrieve_body = $this->mail->get_mail_body($request, $mail_id);
             if (!$retrieve_body) {
                 $request->session()->flash('alert', [
                     "header" => "Houston, We have an problem",
