@@ -216,8 +216,9 @@ class MailController extends Controller
         }
     }
     */
-    public function get_character_mail_headers (Token $token, Request $request)
+    public function get_character_mail_headers (Token $token)
     {
+        $request = new Request();
         $token = $this->token->update_token(Token::where('character_id', $token->character_id)->first());
         if ($token === false) {
             $request->session()->flash('alert', [
@@ -322,11 +323,12 @@ class MailController extends Controller
         return false;
     }
 
-    public function get_mail_body (Request $request, $mail_id)
+    public function get_mail_body ($mail_id)
     {
         $mail_header = MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
         $token = $this->token->update_token(Token::where('character_id', $mail_header->character_id)->first());
         if ($token === false) {
+            $request = new Request();
             $request->session()->flash('alert', [
                 "header" => "Disabled Token Detected.",
                 'message' => "You token has been disabled by the system. Please logout and back into fix this. If issue persists, please create an issue on Github.",
@@ -464,7 +466,7 @@ class MailController extends Controller
             'is_read' => 0
         ])->orderby('created_at', 'desc');
         $get_mail_headers = $mail_headers->get();
-        
+
         if ($get_mail_headers->count() > 0) {
             foreach ($get_mail_headers as $k=>$header) {
                 $label_ids = explode(',',$header->mail_labels);
