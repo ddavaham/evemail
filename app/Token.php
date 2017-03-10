@@ -25,6 +25,7 @@ class Token extends Model
             'refresh_token' => $token_data->refresh_token,
             'token_expiry' => Carbon::now()->addMinutes(20)->toDateTimeString(),
             'scopes' => $character_data->Scopes,
+	    'disabled' => 0
         ]);
 
         return $update_or_create_token;
