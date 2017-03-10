@@ -319,7 +319,7 @@ class MailController extends Controller
         return true;
     }
 
-    public function mark_mail_unread($character, $mail_id)
+    public function mark_mail_unread($character_id, $mail_id)
     {
         $token = $this->token->get_token($character_id);
         if ($token->disabled) {
