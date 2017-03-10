@@ -23,22 +23,29 @@ use EVEMail\Http\Controllers\TokenController;
 class SettingsController extends Controller
 {
 
+    public $request;
+
+    public function __construct(Request $request)
+    {
+        $this->request = $request;
+    }
+
 
     public function overview()
     {
         return view ('settings.overview');
     }
 
-    public function email (Request $request)
+    public function email ()
     {
-        if ($request->isMethod('post') && $request->has('action')) {
-            if ($request->action === "delete_character_email") {
+        if ($this->request->isMethod('post') && $this->request->has('action')) {
+            if ($this->request->action === "delete_character_email") {
                 Auth::user()->email()->delete();
                 Auth::user()->update([
                     'preferences' => null
                 ]);
 
-                $request->session()->flash('alert', [
+                $this->request->session()->flash('alert', [
                     "header" => "Email Setting Updated Successfully",
                     'message' => "We have deleted your email address from our system and reset your preferences.",
                     'type' => 'info',
@@ -46,9 +53,9 @@ class SettingsController extends Controller
                 ]);
                 return redirect()->route('settings.email');
             }
-            if ($request->action === "create_character_email") {
+            if ($this->request->action === "create_character_email") {
                 if (is_null(Auth::user()->email()->first())) {
-                    $validator = Validator::make($request->all(), [
+                    $validator = Validator::make($this->request->all(), [
                         'email_address' => "required|min:5|email|unique:user_emails,character_email",
                         'email_address_confirm' => "required|same:email_address",
                     ], [
@@ -63,13 +70,13 @@ class SettingsController extends Controller
                     }
                     Auth::user()->email()->save(
                         \EVEMail\UserEmail::create([
-                            'character_email' => $request->get('email_address'),
+                            'character_email' => $this->request->get('email_address'),
                             'email_verification_code' => str_random(255)
                         ])
                     );
 
-                    Mail::to($request->get('email_address'))->send(new EmailVerification(Auth::user()));
-                    $request->session()->flash('alert', [
+                    Mail::to($this->request->get('email_address'))->send(new EmailVerification(Auth::user()));
+                    $this->request->session()->flash('alert', [
                         "header" => "Email Setting Updated Successfully",
                         'message' => "You have successfully updated your user record with an email address. Please check your inbox for a verification email from us. You will not be able to receive notifications at this email address until the verification process has been completed.",
                         'type' => 'info',
@@ -83,7 +90,7 @@ class SettingsController extends Controller
         return view('settings.email');
     }
 
-    public function verify(Request $request, $vCode)
+    public function verify($vCode)
     {
         $validator = Validator::make(['vCode' => $vCode], [
             'vCode' => "required|size:255|string",
@@ -100,7 +107,7 @@ class SettingsController extends Controller
             'verified' => 1
         ]);
         if (!$update) {
-            $request->session()->flash('alert', [
+            $this->request->session()->flash('alert', [
                 "header" => "Houston, We have a probelm",
                 'message' => "We were unable to update our record with  your verified email address. Please return to your inbox and try one more time. If the problem persits, please create an issue on GitHub",
                 'type' => 'info',
@@ -108,7 +115,7 @@ class SettingsController extends Controller
             ]);
             return redirect()->route('settings.email');
         }
-        $request->session()->flash('alert', [
+        $this->request->session()->flash('alert', [
             "header" => "Email Verified Successfully",
             'message' => "Thank You for verifing your email address. Please proceed to your preferences now so that you can opt into the various features that are offered by EVEMail",
             'type' => 'info',
@@ -117,13 +124,13 @@ class SettingsController extends Controller
         return redirect()->route('settings.email');
     }
 
-    public function preferences (Request $request)
+    public function preferences ()
     {
-        if ($request->isMethod('post')) {
-            if ($request->has('preferences')) {
+        if ($this->request->isMethod('post')) {
+            if ($this->request->has('preferences')) {
                 //Verifed Valid Preferences Submiteed
                 $preferences =[];
-                foreach ($request->get('preferences') as $k=>$preference) {
+                foreach ($this->request->get('preferences') as $k=>$preference) {
                     $preferences[$k] = ($preference === "on") ? 1 : 0;
                 }
 
@@ -135,13 +142,22 @@ class SettingsController extends Controller
                     'preferences' => null
                 ]);
             }
-            $request->session()->flash('alert', [
+            $this->request->session()->flash('alert', [
                 "header" => "Preferences Updated Successfully",
                 'message' => "Your preferences have been updated successsfully.",
                 'type' => 'info',
                 'close' => 1
             ]);
             return redirect()->route('settings.preferences');
+        }
+        if (!Auth::user()->email()->first()) {
+            $this->request->session()->flash('alert', [
+                "header" => "Invalid Page Request",
+                'message' => "You must have an email address attached to your account before being about to access the Notification Preferences page. Please use this page to set and verify an email address",
+                'type' => 'danger',
+                'close' => 1
+            ]);
+            return redirect()->route('settings.email');
         }
         $preferences = json_decode(Auth::user()->preferences, true);
         return view('settings.preferences', ['preferences' => $preferences]);

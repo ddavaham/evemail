@@ -20,11 +20,14 @@ use Illuminate\Support\Facades\Auth;
 
 class PageController extends Controller
 {
-    public function __construct()
-    {
-        $this->mail = new MailController();
-        $this->token = new TokenController();
 
+    public $request, $mail, $token;
+
+    public function __construct(Request $request)
+    {
+        $this->mail = new MailController($request);
+        $this->token = new TokenController($request);
+        $this->request = $request;
     }
 
     public function index ()
@@ -42,15 +45,15 @@ class PageController extends Controller
         return view('services');
     }
 
-    public function dashboard (Request $request, $label = null)
+    public function dashboard ($label = null)
     {
         if (Auth::user()->is_new) {
             return redirect()->route('dashboard.welcome');
         }
 
-        if ($request->session()->has('mail') || $request->session()->has('recipients')) {
-            $request->session()->forget('mail');
-            $request->session()->forget('recipients');
+        if ($this->request->session()->has('mail') || $this->request->session()->has('recipients')) {
+            $this->request->session()->forget('mail');
+            $this->request->session()->forget('recipients');
         }
 
         $mail_headers = MailHeader::where('mail_header.character_id', Auth::user()->character_id);
@@ -60,7 +63,7 @@ class PageController extends Controller
         }
         $mail_headers = $mail_headers->orderby('mail_header.mail_sent_date', 'desc')->leftJoin('mail_recipient', 'mail_header.mail_sender', '=', 'mail_recipient.recipient_id');
         $mail_headers = $mail_headers->get();
-        $this->update_label_unread_counter($request, Auth::user()->character_id, null, "sync");
+        $this->update_label_unread_counter(Auth::user()->character_id, null, "sync");
         $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
         $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
 
@@ -74,19 +77,52 @@ class PageController extends Controller
 
     public function dashboard_welcome()
     {
+        (!Auth::user()->is_new) ? redirect()->route('dashboard') : null;
+
+        if ($this->request->isMethod('post')) {
+
+            $mail_headers = $this->get_character_mail_headers(Auth::user()->character_id);
+
+            $mail_labels = $this->get_character_mail_labels(Auth::user()->character_id);
+
+            $mailing_lists = $this->get_character_mailing_lists (Auth::user()->character_id);
+
+            //$character_contacts = $this->get_character_contacts(Auth::user()->character_id);
+
+            $process_queue = $this->process_queue();
+
+            if ($mail_headers && $mail_labels && $mailing_lists) {
+                User::where('character_id', Auth::user()->character_id)->update([
+                    'is_new' => 0
+                ]);
+                $this->request->session()->flash('alert', [
+                    "header" => "Mail Downloaded Successfully",
+                    'message' => "We have downloaded your mails successfully. Bear with us while we continue downloading the names of all the character that are part of those mails. You can access your mails, but until our minions have reached out to CCP to get the character data for those emails, we won't know whose name to display to you. Thanks for using EVEMail.Space",
+                    'type' => 'success',
+                    'close' => 1
+                ]);
+                return redirect()->route('dashboard');
+            }
+            $this->request->session()->flash('alert', [
+                'header' => "Disabled Token Detected",
+                'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                'type' => 'danger',
+                'close' => 1
+            ]);
+            return redirect()->route('logout');
+        }
         return view('pages.welcome');
     }
 
-    public function dashboard_fetch (Request $request)
+    public function dashboard_fetch ()
     {
-        $token = Token::where('character_id', Auth::user()->character_id)->first();
-        $update_headers = $this->mail->get_character_mail_headers($token);
+        $update_headers = $this->mail->get_character_mail_headers(Auth::user()->character_id);
         if ($update_headers) {
             MailHeaderUpdate::firstOrCreate([
                 'character_id' => Auth::user()->character_id,
                 'last_header_update' => Carbon::now()->toDateTimeString()
             ]);
-            $request->session()->flash('alert', [
+            $this->request->session()->flash('alert', [
                 "header" => "Mailbox Updated Successfully",
                 'message' => "We have successfully updated your inbox.",
                 'type' => 'info',
@@ -95,7 +131,16 @@ class PageController extends Controller
             $this->mail->process_queue();
             return redirect()->route('dashboard');
         } else {
-            $request->session()->flash('alert', [
+            if (Auth::user()->token()->first()->disabled) {
+                $this->request->session()->flash('alert', [
+                    'header' => "Disabled Token Detected",
+                    'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                    'type' => 'danger',
+                    'close' => 1
+                ]);
+                return redirect()->route('logout');
+            }
+            $this->request->session()->flash('alert', [
                 "header" => "Inbox Out of Date",
                 'message' => "Unable to update mailbox at this time. You maybe missing some mails.",
                 'type' => 'danger',
@@ -105,11 +150,11 @@ class PageController extends Controller
         }
     }
 
-    public function add_recipient(Request $request, $recipient_id = null)
+    public function add_recipient($recipient_id = null)
     {
             $data = [];
-            if ($request->isMethod('post')) {
-                $validator = Validator::make($request->all(), [
+            if ($this->request->isMethod('post')) {
+                $validator = Validator::make($this->request->all(), [
                     'recipient_name' => "required|min:5",
                 ],[
                     'recipient_name.required' => "We need to know who search for. Please type a name to search for.",
@@ -120,11 +165,11 @@ class PageController extends Controller
                     return redirect()->route('mail.send.recipient')->withErrors($validator)->withInput();
                 }
                 $data = [];
-                if (!is_null($request->get('search'))) {
-                    if ($request->get('search') === "ccp" && !is_null($request->get('recipient_name'))) {
-                        $id_search = $this->mail->id_search($request->get('recipient_name'));
+                if (!is_null($this->request->get('search'))) {
+                    if ($this->request->get('search') === "ccp" && !is_null($this->request->get('recipient_name'))) {
+                        $id_search = $this->mail->id_search($this->request->get('recipient_name'));
                         if (!is_numeric($id_search) || $id_search == 0) {
-                            $request->session()->flash('alert', [
+                            $this->request->session()->flash('alert', [
                                 "header" => "Search Complete.",
                                 'message' => "Unfortunately, CCP did not have an additional results. Please try again with a different search phrase.",
                                 'type' => 'info',
@@ -134,7 +179,7 @@ class PageController extends Controller
                         }
 
                     } else {
-                        $request->session()->flash('alert', [
+                        $this->request->session()->flash('alert', [
                             "header" => "Houston, We have an problem",
                             'message' => "We were unable to correctly process your search. Please try again.",
                             'type' => 'info',
@@ -143,37 +188,37 @@ class PageController extends Controller
                         return redirect()->route('mail.send.recipient');
                     }
                 }
-                $data['results'] = MailRecipient::where('recipient_name','like','%'.$request->get('recipient_name').'%')->where('recipient_type','character')->get();
+                $data['results'] = MailRecipient::where('recipient_name','like','%'.$this->request->get('recipient_name').'%')->where('recipient_type','character')->get();
             } else if (!is_null($recipient_id)) {
-                $sessions = $request->session();
+                $sessions = $this->request->session();
                 $recipients = ($sessions->has('recipients')) ? $sessions->get('recipients'): [];
                 $recipients[$recipient_id] = MailRecipient::where(['recipient_id' => $recipient_id, 'recipient_type' => "character"])->first();
-                $request->session()->put('recipients', $recipients);
+                $this->request->session()->put('recipients', $recipients);
                 return redirect()->route('mail.send.recipient');
             }
             return view('mail.add_recipients', $data);
 
     }
 
-    public function mail_reset(Request $request)
+    public function mail_reset()
     {
-        $request->session()->forget('recipients');
-        $request->session()->forget('mail');
-        if ($request->to) {
-          return redirect($request->to);
+        $this->request->session()->forget('recipients');
+        $this->request->session()->forget('mail');
+        if ($this->request->to) {
+          return redirect($this->request->to);
         }
         if (Session::has('is_reply')) {
-            $request->session()->forget('is_reply');
+            $this->request->session()->forget('is_reply');
             return redirect()->route('dashboard');
         }
         return redirect()->route('mail.send.build');
     }
 
-    public function mail_reply_build (Request $request, $mail_id, $recipient = null)
+    public function mail_reply_build ($mail_id, $recipient = null)
     {
 
-      if ($request->isMethod('post')) {
-          $validator = Validator::make($request->all(), [
+      if ($this->request->isMethod('post')) {
+          $validator = Validator::make($this->request->all(), [
               'body' => "required|min:15",
               'subject' => "required|min:5|max:100",
           ],[
@@ -187,18 +232,18 @@ class PageController extends Controller
           if ($validator->fails()) {
               return redirect()->route('mail.reply.build', ['mail_id' => $mail_id])->withErrors($validator)->withInput();
           }
-          $request->session()->put('mail', [
-              'body' => $request->get('body'),
-              'subject' => $request->get('subject')
+          $this->request->session()->put('mail', [
+              'body' => $this->request->get('body'),
+              'subject' => $this->request->get('subject')
           ]);
           return redirect()->route('mail.reply.preview', ['mail_id' => $mail_id]);
       }
-      $sessions = $request->session();
+      $sessions = $this->request->session();
       $recipients = ($sessions->has('recipients')) ? $sessions->get('recipients'): [];
-      if ($request->get('remove')) {
-          unset($recipients[$request->get('remove')]);
+      if ($this->request->get('remove')) {
+          unset($recipients[$this->request->get('remove')]);
           array_keys($recipients);
-          $request->session()->put('recipients', $recipients);
+          $this->request->session()->put('recipients', $recipients);
 
           return redirect()->route('mail.reply.build', ['mail_id' => $mail_id]);
       }
@@ -206,7 +251,7 @@ class PageController extends Controller
       $mail_body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
 
 
-      if ($request->first_time) {
+      if ($this->request->first_time) {
           $mail_from_to_recipient = MailRecipient::where(['recipient_id' => $mail_header->mail_sender])->first();
           if (!is_null($mail_from_to_recipient)) {
             $recipients[$mail_from_to_recipient->recipient_id] = $mail_from_to_recipient;
@@ -220,7 +265,7 @@ class PageController extends Controller
               }
           }
           unset($recipients[Auth::user()->character_id]);
-          $request->session()->put('recipients', $recipients);
+          $this->request->session()->put('recipients', $recipients);
           return redirect()->route('mail.reply.build', ['mail_id' => $mail_id]);
       }
       $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
@@ -228,17 +273,17 @@ class PageController extends Controller
 
       return view('mail.mail_reply_build', [
         'header' => $mail_header,
-        'to' => $request->path(),
+        'to' => $this->request->path(),
         'mail_labels' => $mail_labels,
         'mailing_lists' => $mailing_lists
       ]);
     }
 
-    public function mail_reply_preview(Request $request, $mail_id)
+    public function mail_reply_preview($mail_id)
     {
 
-        if (!$request->session()->has('mail')){
-            $request->session()->flash('alert', [
+        if (!$this->request->session()->has('mail')){
+            $this->request->session()->flash('alert', [
                 "header" => "Invalid Page Request",
                 'message' => "You must have the subject and body of your message set before you can view that page. Please use this page to set those variables.",
                 'type' => 'info',
@@ -284,11 +329,11 @@ class PageController extends Controller
             'mailing_lists' => $mailing_lists
         ]);
     }
-    public function mail_reply_send(Request $request, $mail_id)
+    public function mail_reply_send($mail_id)
     {
 
-        if (!$request->session()->has('recipients') || !$request->session()->has('mail')){
-            $request->session()->flash('alert', [
+        if (!$this->request->session()->has('recipients') || !$this->request->session()->has('mail')){
+            $this->request->session()->flash('alert', [
                 "header" => "Invalid Page Request",
                 'message' => "You must have recipients and a message built in order to access this page. Please use this page to rebuild your message",
                 'type' => 'info',
@@ -297,15 +342,15 @@ class PageController extends Controller
             return redirect()->route('mail.reply.build');
         }
         $message_payload = [];
-        $messsage_recipients = $request->session()->get('recipients');
+        $messsage_recipients = $this->request->session()->get('recipients');
 
-        foreach ($request->session()->get('recipients') as $recipient) {
+        foreach ($this->request->session()->get('recipients') as $recipient) {
             $message_payload['recipients'][] = [
                 'recipient_id' => $recipient->recipient_id,
                 'recipient_type' =>$recipient->recipient_type
             ];
         }
-        $message_payload['subject'] = $request->session()->get('mail.subject');
+        $message_payload['subject'] = $this->request->session()->get('mail.subject');
 
 
         $mail_header = MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
@@ -339,15 +384,13 @@ class PageController extends Controller
 
 
 
-        $message_payload['body'] = $request->session()->get('mail.body')."\r\n\r\n".$body;
+        $message_payload['body'] = $this->request->session()->get('mail.body')."\r\n\r\n".$body;
         $message_payload['approved_cost'] = 10000;
-
-        $token = Token::where('character_id', Auth::user()->character_id)->first();
-        $send_message = $this->mail->send_message($token, $message_payload);
+        $send_message = $this->mail->send_message(Auth::user()->character_id, $message_payload);
         if ($send_message) {
-            $request->session()->forget('recipients');
-            $request->session()->forget('mail');
-            $request->session()->flash('alert', [
+            $this->request->session()->forget('recipients');
+            $this->request->session()->forget('mail');
+            $this->request->session()->flash('alert', [
                 "header" => "Your Mail has been queued",
                 'message' => "Your mail has been queued successfully. Our minons will send it ASAP. I promise, they are workin hard.",
                 'type' => 'success',
@@ -356,7 +399,16 @@ class PageController extends Controller
             return redirect()->route('dashboard');
 
         }
-        $request->session()->flash('alert', [
+        if (Auth::user()->token()->first()->disabled) {
+            $this->request->session()->flash('alert', [
+                'header' => "Disabled Token Detected",
+                'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                'type' => 'danger',
+                'close' => 1
+            ]);
+            return redirect()->route('logout');
+        }
+        $this->request->session()->flash('alert', [
             "header" => "Houston, there maybe a problem.",
             'message' => "We attempted to queue your message, but there was a problem. Do us a favor and click that green button ooooooone more time.",
             'type' => 'info',
@@ -365,10 +417,10 @@ class PageController extends Controller
         return redirect()->route('mail.send.preview');
     }
 
-    public function mail_send_build (Request $request)
+    public function mail_send_build ()
     {
-        if ($request->isMethod('post')) {
-            $validator = Validator::make($request->all(), [
+        if ($this->request->isMethod('post')) {
+            $validator = Validator::make($this->request->all(), [
                 'body' => "required|min:15",
                 'subject' => "required|min:5|max:100",
             ],[
@@ -382,17 +434,17 @@ class PageController extends Controller
             if ($validator->fails()) {
                 return redirect()->route('mail.send.build')->withErrors($validator)->withInput();
             }
-            $request->session()->put('mail', [
-                'body' => $request->get('body'),
-                'subject' => $request->get('subject')
+            $this->request->session()->put('mail', [
+                'body' => $this->request->get('body'),
+                'subject' => $this->request->get('subject')
             ]);
             return redirect()->route('mail.send.preview');
         }
-        if ($request->get('remove')) {
-            $recipients = $request->session()->get('recipients');
-            unset($recipients[$request->get('remove')]);
+        if ($this->request->get('remove')) {
+            $recipients = $this->request->session()->get('recipients');
+            unset($recipients[$this->request->get('remove')]);
             array_keys($recipients);
-            $request->session()->put('recipients', $recipients);
+            $this->request->session()->put('recipients', $recipients);
 
             return redirect()->route('mail.send.build');
         }
@@ -404,10 +456,10 @@ class PageController extends Controller
         ]);
     }
 
-    public function mail_send_preview(Request $request)
+    public function mail_send_preview()
     {
-        if (!$request->session()->has('mail') || !$request->session()->has('recipients')){
-            $request->session()->flash('alert', [
+        if (!$this->request->session()->has('mail') || !$this->request->session()->has('recipients')){
+            $this->request->session()->flash('alert', [
                 "header" => "Invalid Page Request",
                 'message' => "You must have the recipients,subject, and body of your message set before you can view that page. Please use this page to set those variables.",
                 'type' => 'info',
@@ -423,10 +475,10 @@ class PageController extends Controller
         ]);
     }
 
-    public function mail_send_send(Request $request)
+    public function mail_send_send()
     {
-        if (!$request->session()->has('recipients') || !$request->session()->has('mail')){
-            $request->session()->flash('alert', [
+        if (!$this->request->session()->has('recipients') || !$this->request->session()->has('mail')){
+            $this->request->session()->flash('alert', [
                 "header" => "Invalid Page Request",
                 'message' => "You must have recipients and a message built in order to access this page. Please use this page to rebuild your message",
                 'type' => 'info',
@@ -435,23 +487,22 @@ class PageController extends Controller
             return redirect()->route('mail.send.build');
         }
         $message_payload = [];
-        $messsage_recipients = $request->session()->get('recipients');
+        $messsage_recipients = $this->request->session()->get('recipients');
 
-        foreach ($request->session()->get('recipients') as $recipient) {
+        foreach ($this->request->session()->get('recipients') as $recipient) {
             $message_payload['recipients'][] = [
                 'recipient_id' => $recipient->recipient_id,
                 'recipient_type' =>$recipient->recipient_type
             ];
         }
-        $message_payload['subject'] = $request->session()->get('mail.subject');
-        $message_payload['body'] = $request->session()->get('mail.body');
+        $message_payload['subject'] = $this->request->session()->get('mail.subject');
+        $message_payload['body'] = $this->request->session()->get('mail.body');
         $message_payload['approved_cost'] = 10000;
-        $token = Token::where('character_id', Auth::user()->character_id)->first();
-        $send_message = $this->mail->send_message($token, $message_payload);
+        $send_message = $this->mail->send_message(Auth::user()->character_id, $message_payload);
         if ($send_message) {
-            $request->session()->forget('recipients');
-            $request->session()->forget('mail');
-            $request->session()->flash('alert', [
+            $this->request->session()->forget('recipients');
+            $this->request->session()->forget('mail');
+            $this->request->session()->flash('alert', [
                 "header" => "Your Mail has been queued",
                 'message' => "Your mail has been queued successfully. Our minons will send it ASAP. I promise, they are workin hard.",
                 'type' => 'success',
@@ -460,7 +511,16 @@ class PageController extends Controller
             return redirect()->route('dashboard');
 
         }
-        $request->session()->flash('alert', [
+        if (Auth::user()->token()->first()->disabled) {
+            $this->request->session()->flash('alert', [
+                'header' => "Disabled Token Detected",
+                'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                'type' => 'danger',
+                'close' => 1
+            ]);
+            return redirect()->route('logout');
+        }
+        $this->request->session()->flash('alert', [
             "header" => "Houston, there maybe a problem.",
             'message' => "We attempted to queue your message, but there was a problem. Do us a favor and click that green button ooooooone more time.",
             'type' => 'info',
@@ -469,13 +529,13 @@ class PageController extends Controller
         return redirect()->route('mail.send.preview');
     }
 
-    public function mail_view(Request $request, $mail_id)
+    public function mail_view($mail_id)
     {
         $header = MailHeader::where(['mail_header.character_id' => Auth::user()->character_id, 'mail_header.mail_id' => $mail_id])
         ->leftJoin('mail_recipient', 'mail_header.mail_sender', '=', 'mail_recipient.recipient_id')
         ->first();
         if (is_null($header)) {
-            $request->session()->flash('alert', [
+            $this->request->session()->flash('alert', [
                 "header" => "Houston, We have an problem",
                 'message' => "The mail you are requesting does not exist in our database. To be safe, we have deleted it from our database. If it exists, we will detect it the next time you log in.",
                 'type' => 'info',
@@ -497,7 +557,7 @@ class PageController extends Controller
             }
             $recipient = MailRecipient::where($where)->first();
             if (is_null($recipient) && $recipient_type === "mailing_list") {
-                $request->session()->flash('alert', [
+                $this->request->session()->flash('alert', [
                     "header" => "Unknown Mailing List",
                     'message' => "We don't know the mailing list that this message was sent to. Please go to the settings menu and refresh your mailing lists.",
                     'type' => 'warning',
@@ -517,9 +577,18 @@ class PageController extends Controller
 
 
         if (is_null($body)) {
-            $retrieve_body = $this->mail->get_mail_body($request, $mail_id);
+            $retrieve_body = $this->mail->get_mail_body(Auth::user()->character_id, $mail_id);
             if (!$retrieve_body) {
-                $request->session()->flash('alert', [
+                if (Auth::user()->token()->first()->disabled) {
+                    $this->request->session()->flash('alert', [
+                        'header' => "Disabled Token Detected",
+                        'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                        'type' => 'danger',
+                        'close' => 1
+                    ]);
+                    return redirect()->route('logout');
+                }
+                $this->request->session()->flash('alert', [
                     "header" => "Houston, We have an problem",
                     'message' => "The mail you are requesting does not exist in our database nor are we able to retreive it from CCP. That mail has probably been deleted in game or by another mail client. To be safe, we have deleted it from our database. If it exists, we will detect it the next time you log in.",
                     'type' => 'info',
@@ -531,13 +600,22 @@ class PageController extends Controller
             $body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
         }
         if (!$header->is_read) {
-            $update_label_unread_counter = $this->update_label_unread_counter($request, Auth::user()->character_id, $mail_id, "sub");
+            $update_label_unread_counter = $this->update_label_unread_counter(Auth::user()->character_id, $mail_id, "sub");
 
 
             $update_header =  MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->update([
                 'is_read' => 1
             ]);
-            $mail_mail = $this->mail->mark_mail_read($header->mail_id);
+            $mark_mail_read = $this->mail->mark_mail_read(Auth::user()->character_id, $header->mail_id);
+            if (!$mark_mail_read && Auth::user()->token()->first()->disabled) {
+                $this->request->session()->flash('alert', [
+                    'header' => "Disabled Token Detected",
+                    'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                    'type' => 'danger',
+                    'close' => 1
+                ]);
+                return redirect()->route('logout');
+            }
         }
         $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
         $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
@@ -551,147 +629,11 @@ class PageController extends Controller
 
     }
 
-    public function reply_mail(Request $request, $mail_id, $step, $recipient_id = null)
-    {
-        $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
-        $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
-        $header = MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
-        if ($step == 1) {
-
-            $sessions = $request->session();
-            $mail_recipients = ($sessions->has('recipients')) ? $sessions->get('recipients'): [];
-
-            foreach (json_decode($header->mail_recipient, true) as $recipient) {
-                $where = ['recipient_id' => $recipient['recipient_id'], 'recipient_type' => $recipient['recipient_type']];
-                if ($recipient['recipient_type'] === "mailing_list") {
-                    $where['character_id'] = Auth::user()->character_id;
-                }
-
-                $get_recipient_data = MailRecipient::where($where)->first();
-                if (is_null($get_recipient_data) && $recipient['recipient_type'] === "mailing_list") {
-                    $request->session()->flash('alert', [
-                        "header" => "Unknown Mailing List",
-                        'message' => "We don't know the mailing list that this message was sent to. Please go to the settings menu and refresh your mailing lists.",
-                        'type' => 'warning',
-                        'close' => 1
-                    ]);
-                } else {
-                    $mail_recipients[$get_recipient_data->recipient_id] = $get_recipient_data;
-                }
-
-            }
-
-            $request->session()->put('recipients',$mail_recipients);
-
-            if ($request->isMethod('post')) {
-                $validator = Validator::make($request->all(), [
-                    'body' => "required|min:15",
-                    'subject' => "required|min:5|max:100",
-                ],[
-                    'body.required' => "You do know the point of an email is to actually communicate right? Type something in the body down there for us to send your recipient",
-                    'body.min' => "Alright now, not quite enough beef to the body of this thing. Please make the body off your message atleast :min",
-                    'body.max' => "Alright Mr./Miss Novelist. Im sure this is a well thoughout email, but please limit it to :max characters.",
-                    'subject.required' => "Try typing a subject down there. It helps let the reader know what the email is regarding.",
-                    'subject.min' => "Yikes!! That is a short subject line there. Be a little nicer to your recipients and add some letters. Make it atleast :min characters long",
-                    'subject.max' => " You do realize that at this point, you subject line mine as well be in the body of you email. That is a little log for us. Shoten it to belong :max characters",
-                ]);
-                if ($validator->fails()) {
-                    return redirect()->route('mail.reply', ['step_id' => 1, 'mail_id' => $header->mail_id])->withErrors($validator)->withInput();
-                }
-                $request->session()->put('mail', [
-                    'body' => $request->get('body'),
-                    'subject' => $request->get('subject')
-                ]);
-                return redirect()->route('mail.reply', ['step_id' => 2, 'mail_id' => $header->mail_id]);
-            }
-            if ($request->get('remove')) {
-                $recipients = $request->session()->get('recipients');
-                unset($recipients[$request->get('remove')]);
-                array_keys($recipients);
-                $request->session()->put('recipients', $recipients);
-
-                return redirect()->route('mail.reply', ['label_id' => 1, 'mail_id' => $header->mail_id]);
-            }
-
-            return view('mail.reply_message', [
-                'header' => $header,
-                'mail_labels' => $mail_labels,
-                'mailing_lists' => $mailing_lists
-            ]);
-        }
-        if ($step == 2) {
-            if (!$request->session()->has('mail')){
-                $request->session()->flash('alert', [
-                    "header" => "Invalid Page Request",
-                    'message' => "You must have the subject and body of your message set before you can view that page. Please use this page to set those variables.",
-                    'type' => 'info',
-                    'close' => 1
-                ]);
-                return redirect()->route('mail.reply', ['step_id' => 1, 'mail_id' => $header->mail_id]);
-            }
-
-            dd("\r\n\r\n{$header->mail_subject}\r\nFrom: ".$header->mail_sender."\r\nSent: {$header->mail_sent_date}\r\nTo: ");
-
-            return view('mail.preview_message', [
-                'header' => $header,
-                'mail_labels' => $mail_labels,
-                'mailing_lists' => $mailing_lists
-            ]);
-        }
-        if ($step == 3) {
-            if (!$request->session()->has('recipients') || !$request->session()->has('mail')){
-                $request->session()->flash('alert', [
-                    "header" => "Invalid Page Request",
-                    'message' => "You must have recipients and a message built in order to access this page. Please use this page to rebuild your message",
-                    'type' => 'info',
-                    'close' => 1
-                ]);
-                return redirect()->route('mail.reply', ['step_id' => 1, 'mail_id' => $header->mail_id]);
-            }
-            $message_payload = [];
-            $messsage_recipients = $request->session()->get('recipients');
-
-            foreach ($request->session()->get('recipients') as $recipient) {
-                $message_payload['recipients'][] = [
-                    'recipient_id' => $recipient->recipient_id,
-                    'recipient_type' =>$recipient->recipient_type
-                ];
-            }
-            $message_payload['subject'] = $request->session()->get('mail.subject');
-
-
-
-            $message_payload['body'] = $request->session()->get('mail.body');
-            $message_payload['approved_cost'] = 10000;
-            $token = Token::where('character_id', Auth::user()->character_id)->first();
-            $send_message = $this->mail->send_message($token, $message_payload);
-            if ($send_message) {
-                $request->session()->forget('recipients');
-                $request->session()->forget('mail');
-                $request->session()->flash('alert', [
-                    "header" => "Your Mail has been queued",
-                    'message' => "Your mail has been queued successfully. Our minons will send it ASAP. I promise, they are workin hard.",
-                    'type' => 'success',
-                    'close' => 1
-                ]);
-                return redirect()->route('dashboard');
-
-            }
-            $request->session()->flash('alert', [
-                "header" => "Houston, there maybe a problem.",
-                'message' => "We attempted to queue your message, but there was a problem. Do us a favor and click that green button ooooooone more time.",
-                'type' => 'info',
-                'close' => 1
-            ]);
-            return redirect()->route('mail.reply', ['step_id' => 1, 'mail_id' => $header->mail_id]);
-        }
-    }
-
-    public function unread_mail (Request $request, $mail_id)
+    public function unread_mail ($mail_id)
     {
         $body = MailBody::where('mail_id', $mail_id)->first();
         if (is_null($body)){
-            $request->session()->flash('alert', [
+            $this->request->session()->flash('alert', [
                 "header" => "Houston, We have an problem",
                 'message' => "The mail you are requesting does not exist in our database. Please hold tight and see if our minions can find it.",
                 'type' => 'info',
@@ -699,13 +641,22 @@ class PageController extends Controller
             ]);
             return redirect()->route('dashboard');
         }
-        $update_label_unread_counter = $this->update_label_unread_counter($request, Auth::user()->character_id, $mail_id, "add");
-        $unread_mail = $this->mail->mark_mail_unread($mail_id);
+        $update_label_unread_counter = $this->update_label_unread_counter(Auth::user()->character_id, $mail_id, "add");
+        $mark_mail_unread = $this->mail->mark_mail_unread(Auth::user()->character_id, $mail_id);
+        if (!$mark_mail_unread && Auth::user()->token()->first()->disabled) {
+            $this->request->session()->flash('alert', [
+                'header' => "Disabled Token Detected",
+                'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                'type' => 'danger',
+                'close' => 1
+            ]);
+            return redirect()->route('logout');
+        }
         MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->update([
             'is_read'=> 0
         ]);
 
-        $request->session()->flash('alert', [
+        $this->request->session()->flash('alert', [
                 'message' => "As far as we are concerned, you never read that mail.",
                 'type' => 'info',
                 'close' => 1
@@ -714,11 +665,11 @@ class PageController extends Controller
 
         return redirect()->route('dashboard');
     }
-    public function delete_mail (Request $request, $mail_id)
+    public function delete_mail ($mail_id)
     {
         $body = MailBody::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->first();
         if (is_null($body)){
-            $request->session()->flash('alert', [
+            $this->request->session()->flash('alert', [
                 "header" => "Houston, We have an problem",
                 'message' => "The mail that you are looking for does not exists or does not belong to you. Please try again. If you continue to get this error, please use the contact for to send us a message.",
                 'type' => 'info',
@@ -726,25 +677,33 @@ class PageController extends Controller
             ]);
             return redirect()->route('dashboard');
         }
-        $delete_mail = $this->mail->delete_mail($mail_id);
-        if ($delete_mail) {
-            $request->session()->flash('alert', [
-                "header" => "That message was deleted successfully",
-                'message' => "You have successfully delete the message with id {$body->mail_id}.",
-                'type' => 'success',
+        $delete_mail = $this->mail->delete_mail(Auth::user()->character_id, $mail_id);
+        if (!$delete_mail && Auth::user()->token()->first()->disabled) {
+            $this->request->session()->flash('alert', [
+                'header' => "Disabled Token Detected",
+                'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                'type' => 'danger',
+                'close' => 1
+            ]);
+            return redirect()->route('logout');
+        } else if (!$delete_mail) {
+            $this->request->session()->flash('alert', [
+                'message' => "We apologize for the inconvienence, put we are unable to update the status of the mail at this time. Please try again in 1 minute.",
+                'type' => 'danger',
                 'close' => 1
             ]);
             return redirect()->route('dashboard');
         }
-        $request->session()->flash('alert', [
-            'message' => "We apologize for the inconvienence, put we are unable to update the status of the mail at this time. Please try again in 1 minute.",
-            'type' => 'danger',
+        $this->request->session()->flash('alert', [
+            "header" => "That message was deleted successfully",
+            'message' => "You have successfully delete the message with id {$body->mail_id}.",
+            'type' => 'success',
             'close' => 1
         ]);
         return redirect()->route('dashboard');
     }
 
-    public function update_label_unread_counter(Request $request, $character_id, $mail_id = null, $action)
+    public function update_label_unread_counter($character_id, $mail_id = null, $action)
     {
         if ($action === "sync") {
             $label_array = [];
@@ -770,14 +729,12 @@ class PageController extends Controller
             $mail_label = MailLabel::where(['character_id' => $character_id, 'label_id' => $label])->first();
             if (!is_null($mail_label)) {
                 $unread_count = $mail_label->label_unread_count;
-
-
                 if ($action === "add") {
                     $unread_count = $unread_count+1;
                 }
                 if ($action === "sub") {
                     if ($unread_count <= 0) {
-                        $request->session()->flash('alert', [
+                        $this->request->session()->flash('alert', [
                             "header" => "Houston, We have an problem",
                             'message' => "Unread count for current label is zero, but you have mail that is unread for this label. Please click Update Mail Labels below so that we can resync your labels unread count to provide you an accurate count.",
                             'type' => 'danger',
@@ -796,33 +753,81 @@ class PageController extends Controller
     }
 
 
-    public function update_mail_labels(Request $request)
+    public function update_mail_labels()
     {
-        $token = Token::where('character_id', Auth::user()->character_id )->first();
-        $this->mail->get_character_mail_labels($token);
-        $request->session()->flash('alert', [
-            'message' => "We've submitted your request to update your mailing lablels.",
-            'type' => 'info',
+        $update = $this->mail->get_character_mail_labels(Auth::user()->character_id);
+        if (!$update) {
+            if (Auth::user()->token()->first()->disabled) {
+                $this->request->session()->flash('alert', [
+                    'header' => "Disabled Token Detected",
+                    'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                    'type' => 'danger',
+                    'close' => 1
+                ]);
+                return redirect()->route('logout');
+            }
+            $this->request->session()->flash('alert', [
+                'header' => "An Error has Occured",
+                'message' => "We were unable to update your label at this time. Please try again in a few minutes.",
+                'type' => 'danger',
+                'close' => 1
+            ]);
+            return redirect()->route('dashboard');
+        }
+        $this->request->session()->flash('alert', [
+            'message' => "Your labels have been updated successfully",
+            'type' => 'success',
             'close' => 1
         ]);
-        return redirect()->route('settings');
+        return redirect()->route('dashboard');
     }
-    public function update_mailing_lists(Request $request)
+    public function update_mailing_lists()
     {
-        $token = Token::where('character_id', Auth::user()->character_id )->first();
-        $this->mail->get_character_mailing_lists($token);
-        $request->session()->flash('alert', [
+        $update = $this->mail->get_character_mailing_lists(Auth::user()->character_id);
+        if (!$update) {
+            if (Auth::user()->token()->first()->disabled) {
+                $this->request->session()->flash('alert', [
+                    'header' => "Disabled Token Detected",
+                    'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                    'type' => 'danger',
+                    'close' => 1
+                ]);
+                return redirect()->route('logout');
+            }
+            $this->request->session()->flash('alert', [
+                'header' => "An Error has Occured",
+                'message' => "We were unable to update your mailing lists at this time. Please try again in a few minutes.",
+                'type' => 'danger',
+                'close' => 1
+            ]);
+            return redirect()->route('dashboard');
+        }
+        $this->request->session()->flash('alert', [
             'message' => "We've submitted your request to update your mailing lists.",
             'type' => 'info',
             'close' => 1
         ]);
-        return redirect()->route('settings');
+        return redirect()->route('dashboard');
     }
 
+    public function get_token ($character_id)
+    {
+        $token = $this->token->get_token($character_id);
+        if ($token->disabled) {
+            $this->request->session()->flash('alert', [
+                'header' => "Disabled Token Detected",
+                'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
+                'type' => 'danger',
+                'close' => 1
+            ]);
+            return redirect()->route('logout');
+        }
+        return $token;
+    }
 
     // public function maintanence()
     // {
-    //     $this->mail->check_for_unknown_headers(95923084);
+    //     $this->mail->check_for_unknown_headers();
     // }
 
 }

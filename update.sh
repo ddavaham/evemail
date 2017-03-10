@@ -9,5 +9,5 @@ supervisorctl reread
 sleep 2
 supervisorctl update
 sleep 2
-supervisorctl restart evemail-worker:*
+supervisorctl restart dev-evemail-worker:*
 sleep 2

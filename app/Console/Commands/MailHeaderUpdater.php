@@ -5,10 +5,11 @@ namespace EVEMail\Console\Commands;
 
 use Carbon\Carbon;
 use EVEMail\Token;
-use EVEMail\Jobs\GetCharacterMailHeaders;
+use Illuminate\Http\Request;
 use EVEMail\MailHeaderUpdate;
-use EVEMail\Http\Controllers\MailController;
 use Illuminate\Console\Command;
+use EVEMail\Jobs\GetCharacterMailHeaders;
+use EVEMail\Http\Controllers\MailController;
 
 class MailHeaderUpdater extends Command
 {
@@ -33,7 +34,8 @@ class MailHeaderUpdater extends Command
      */
     public function __construct()
     {
-        $this->mail = new MailController();
+        $request = new Request();
+        $this->mail = new MailController($request);
         parent::__construct();
     }
 

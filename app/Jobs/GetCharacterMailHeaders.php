@@ -35,12 +35,8 @@ class GetCharacterMailHeaders implements ShouldQueue
      */
     public function handle()
     {
-        $token = $this->token->update_token(Token::where('character_id', $this->character_id)->first());
-        if ($token !== false) {
-            $this->mail->get_character_mail_headers($token);
-            $this->mail->check_for_unknown_headers($this->character_id);
-        }
-
+        $this->mail->get_character_mail_headers($this->character_id);
+        $this->mail->check_for_unknown_headers($this->character_id);
     }
 
     public function __destruct(){

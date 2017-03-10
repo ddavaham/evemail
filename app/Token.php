@@ -30,4 +30,9 @@ class Token extends Model
 
         return $update_or_create_token;
     }
+
+    public function user()
+    {
+        return $this->belongsTo('EVEMail\User', 'character_id');
+    }
 }

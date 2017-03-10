@@ -5,30 +5,34 @@ namespace EVEMail\Jobs;
 use Carbon\Carbon;
 use EVEMail\Token;
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use EVEMail\Http\Controllers\HTTPController;
 use EVEMail\Http\Controllers\MailController;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\Log;
+use EVEMail\Http\Controllers\TokenController;
+
+
 
 class PostCharacterMail implements ShouldQueue
 {
     use InteractsWithQueue, Queueable, SerializesModels;
 
-    public $token, $payload, $http, $mail;
+    public $character_id, $payload, $http, $mail, $token;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct(Token $token, $payload)
+    public function __construct($character_id, $payload)
     {
         $this->http = new HTTPController();
         $this->mail = new MailController();
         $this->payload = $payload;
-        $this->token = $token;
+        $this->character_id = $character_id;
+        $this->token = new TokenController();
     }
 
     /**
@@ -38,9 +42,13 @@ class PostCharacterMail implements ShouldQueue
      */
     public function handle()
     {
-        $this->http->post_character_mail($this->token, $this->payload);
-        $this->mail->get_character_mail_headers($this->token);
-        $this->mail->process_queue();
+        $get_token = $this->token->get_token($this->character_id);
+        if (!$get_token->disabled) {
+            $this->http->post_character_mail($get_token, $this->payload);
+            $this->mail->get_character_mail_headers($this->character_id);
+            $this->mail->process_queue();
+        }
+
     }
 
     public function __destruct(){

@@ -49,5 +49,9 @@ class User extends Authenticatable
     {
         return json_decode($this->preferences, true);
     }
+    public function token ()
+    {
+        return $this->has('EVEMail\Token', 'character_id');
+    }
 
 }
