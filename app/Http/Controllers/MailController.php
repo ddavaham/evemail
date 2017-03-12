@@ -164,7 +164,7 @@ class MailController extends Controller
         if ($mail_headers->httpStatusCode != 200) {
             return false;
         }
-        dd($mail_headers);
+        
         foreach ($mail_headers->response as $mail_header) {
             $header_exists = MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_header->mail_id])->first();
             if (is_null($header_exists)) {
