@@ -14,7 +14,8 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         "EVEMail\Console\Commands\MailHeaderUpdater",
-        "EVEMail\Console\Commands\PurgeOldMailBodies"
+        "EVEMail\Console\Commands\PurgeOldMailBodies",
+        "EVEMail\Console\Commands\ProcessQueue"
     ];
 
     /**
