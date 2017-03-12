@@ -14,7 +14,7 @@ class AddLocationToQueueTable extends Migration
     public function up()
     {
         Schema::table('queue', function (Blueprint $table) {
-            $table->string('location');
+            $table->string('location')->after('queue_id');
         });
     }
 
