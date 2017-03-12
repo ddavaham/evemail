@@ -8,3 +8,4 @@ Homestead.yaml
 .env
 .ftpconfig
 update.sh
+archive.php
