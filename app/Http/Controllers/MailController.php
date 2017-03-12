@@ -164,6 +164,7 @@ class MailController extends Controller
         if ($mail_headers->httpStatusCode != 200) {
             return false;
         }
+        dd($mail_headers);
         foreach ($mail_headers->response as $mail_header) {
             $header_exists = MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_header->mail_id])->first();
             if (is_null($header_exists)) {
@@ -174,7 +175,8 @@ class MailController extends Controller
                             $is_queued = Queue::where('queue_id', $mail_recipient->recipient_id)->first();
                             if (is_null($is_queued)) {
                                 $PlaceInQueue = Queue::create([
-                                    'queue_id' => $mail_recipient->recipient_id
+                                    'queue_id' => $mail_recipient->recipient_id,
+                                    'location' => 'MailHeaderRecipientLoop'
                                 ]);
                             }
                         }
@@ -204,7 +206,8 @@ class MailController extends Controller
                     $is_queued = Queue::where('queue_id', $mail_header->from)->first();
                     if (is_null($is_queued)) {
                         $PlaceInQueue = Queue::create([
-                            'queue_id' => $mail_header->from
+                            'queue_id' => $mail_header->from,
+                            'location' => "MailHeaderSenderKnown"
                         ]);
                     }
                 }
@@ -366,7 +369,7 @@ class MailController extends Controller
         ])->orderby('created_at', 'desc');
         $get_mail_headers = $mail_headers->get();
 
-        if ($get_mail_headers->count() > 0) {
+        if ($get_mail_headers->count() > 0 ) {
             foreach ($get_mail_headers as $k=>$header) {
                 $label_ids = explode(',',$header->mail_labels);
                 foreach ($label_ids as $label_id) {

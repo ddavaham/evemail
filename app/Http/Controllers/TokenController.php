@@ -18,6 +18,7 @@ class TokenController extends Controller
 	public function get_token($character_id)
 	{
 		$token = Token::where('character_id', $character_id)->first();
+
         if (Carbon::now()->toDateTimeString() > $token->token_expiry) {
 			$new_token = $this->http->post_refresh_token($token);
 			if ($new_token->httpStatusCode == 200) {
@@ -29,6 +30,7 @@ class TokenController extends Controller
 				$token->disabled = 1;
 			}
 			$token->save();
+
         }
 		return $token;
 	}

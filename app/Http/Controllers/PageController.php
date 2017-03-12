@@ -27,6 +27,7 @@ class PageController extends Controller
     {
         $this->mail = new MailController($request);
         $this->token = new TokenController($request);
+        $this->http = new \EVEMail\Http\Controllers\HttpController();
         $this->request = $request;
     }
 
@@ -81,18 +82,17 @@ class PageController extends Controller
 
         if ($this->request->isMethod('post')) {
 
-            $mail_headers = $this->get_character_mail_headers(Auth::user()->character_id);
 
-            $mail_labels = $this->get_character_mail_labels(Auth::user()->character_id);
+            $mail_labels = $this->mail->get_character_mail_labels(Auth::user()->character_id);
 
-            $mailing_lists = $this->get_character_mailing_lists (Auth::user()->character_id);
-
+            $mailing_lists = $this->mail->get_character_mailing_lists (Auth::user()->character_id);
+            $mail_headers = $this->mail->get_character_mail_headers(Auth::user()->character_id);
             //$character_contacts = $this->get_character_contacts(Auth::user()->character_id);
 
-            $process_queue = $this->process_queue();
+            $process_queue = $this->mail->process_queue();
 
             if ($mail_headers && $mail_labels && $mailing_lists) {
-                User::where('character_id', Auth::user()->character_id)->update([
+                \EVEMail\User::where('character_id', Auth::user()->character_id)->update([
                     'is_new' => 0
                 ]);
                 $this->request->session()->flash('alert', [
@@ -132,6 +132,7 @@ class PageController extends Controller
             return redirect()->route('dashboard');
         } else {
             if (Auth::user()->token()->first()->disabled) {
+                Auth::user()->token()->delete();
                 $this->request->session()->flash('alert', [
                     'header' => "Disabled Token Detected",
                     'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
@@ -399,15 +400,7 @@ class PageController extends Controller
             return redirect()->route('dashboard');
 
         }
-        if (Auth::user()->token()->first()->disabled) {
-            $this->request->session()->flash('alert', [
-                'header' => "Disabled Token Detected",
-                'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
-                'type' => 'danger',
-                'close' => 1
-            ]);
-            return redirect()->route('logout');
-        }
+
         $this->request->session()->flash('alert', [
             "header" => "Houston, there maybe a problem.",
             'message' => "We attempted to queue your message, but there was a problem. Do us a favor and click that green button ooooooone more time.",
@@ -825,9 +818,12 @@ class PageController extends Controller
         return $token;
     }
 
-    // public function maintanence()
-    // {
-    //     $this->mail->check_for_unknown_headers();
-    // }
+    public function testing()
+    {
+        $headers = $this->mail->get_character_mail_headers(95923084);
+        //$id = $this->http->post_universe_names([1017240662482]);
+        dd($headers);
+    }
+
 
 }

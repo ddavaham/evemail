@@ -10,6 +10,6 @@ class Queue extends Model
     protected $table = 'queue';
 
     protected $fillable = [
-        'queue_id'
+        'queue_id', 'location'
     ];
 }

@@ -39,7 +39,11 @@
                 </p>
                 <div class="row">
                     <div class="col-md-4 col-md-offset-4">
-                        <a href="{{ route('dashboard.welcome.download') }}" class="btn btn-primary btn-block">Download My Messages</a>
+                        <form action="{{ route('dashboard.welcome.post') }}" method="post">
+                            {{ csrf_field() }}
+                            <button class="btn btn-primary btn-block">Download My Messages</button>
+                        </form>
+
                     </div>
                 </div>
             </div>

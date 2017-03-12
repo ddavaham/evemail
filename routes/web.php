@@ -64,7 +64,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/settings/update/mailing_lists', 'SettingsController@construction')->name('settings.mailing_lists');
 
     Route::get('/welcome', 'PageController@dashboard_welcome')->name('dashboard.welcome');
-    Route::get('/welcome/download', 'MailController@first_time_download')->name('dashboard.welcome.download');
+    Route::post('/welcome', 'PageController@dashboard_welcome')->name('dashboard.welcome.post');
 });
 
-// Route::get('/testing', 'PageController@maintanence');
+// Route::get('/testing', 'PageController@testing');

@@ -51,7 +51,7 @@ class User extends Authenticatable
     }
     public function token ()
     {
-        return $this->has('EVEMail\Token', 'character_id');
+        return $this->hasOne('EVEMail\Token', 'character_id');
     }
 
 }
