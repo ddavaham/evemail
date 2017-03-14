@@ -606,8 +606,7 @@ class PageController extends Controller
                 Auth::logout();
                 return redirect()->route('login');
             }
-
-            dd("Instance of Token that is not disabled", $token);
+            return redirect()->route('dashboard');
         } else if ($send_message) {
 
             $this->request->session()->forget('recipients');
