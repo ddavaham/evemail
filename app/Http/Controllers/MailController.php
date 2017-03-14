@@ -3,24 +3,25 @@ namespace EVEMail\Http\Controllers;
 
 use DB;
 use Mail;
-use Carbon\Carbon;
+use Curl\Curl;
 use EVEMail\User;
+use Carbon\Carbon;
 use EVEMail\Token;
 use EVEMail\Queue;
-use EVEMail\MailHeader;
-use EVEMail\MailHeaderUpdate;
-use EVEMail\MailLabel;
 use EVEMail\MailBody;
+use EVEMail\MailLabel;
+use EVEMail\MailHeader;
 use EVEMail\MailRecipient;
 use EVEMail\CharacterContact;
+use EVEMail\MailHeaderUpdate;
 use EVEMail\Jobs\ProcessQueue;
 use EVEMail\Jobs\UpdateMetaData;
 use EVEMail\Jobs\PostCharacterMail;
-use EVEMail\Mail\NewMailNotification;
-
 use Illuminate\Support\Facades\Auth;
+use EVEMail\Mail\NewMailNotification;
 use EVEMail\Http\Controllers\HTTPController;
 use EVEMail\Http\Controllers\TokenController;
+
 
 class MailController extends Controller
 {
@@ -33,227 +34,219 @@ class MailController extends Controller
 
     }
 
-
-
     public function process_queue()
     {
-        $queued_ids = Queue::select('queue_id')->get();
-
-        if (!is_null($queued_ids) && $queued_ids->count() > 0) {
-            $ids = [];
-            foreach ($queued_ids as $id) {
-                $ids[] = $id->queue_id;
-            }
-            $parse_ids = $this->http->post_universe_names($ids);
-
-            if ($parse_ids->httpStatusCode == 200) {
-                foreach ($parse_ids->response as $parsed_id) {
-                    MailRecipient::create([
-                        'recipient_id' => $parsed_id->id,
-                        'recipient_name' => $parsed_id->name,
-                        'recipient_type' => $parsed_id->category
-                    ]);
-                    Queue::where('queue_id', $parsed_id->id)->delete();
-                }
-            }
+        $queue = Queue::get();
+        if ($queue->count() > 0) {
+            $job = (new \EVEMail\Jobs\ProcessQueue())
+                    ->delay(Carbon::now()->addSeconds(5));
+            dispatch($job);
         }
-
-        // $job = (new ProcessQueue())
-        //         ->delay(Carbon::now()->addSeconds(5));
-        // dispatch($job);
     }
 
     public function get_character_mail_labels ($character_id)
     {
         $token = $this->token->get_token($character_id);
-        if ($token->disabled) {
-            return false;
+        if ($token instanceof Token) {
+            if ($token->disabled)
+            {
+                return $token;
+            }
         }
         $mail_labels = $this->http->get_character_mail_labels($token);
 
-        if ($mail_labels->httpStatusCode != 200) {
-            return false;
-        } else {
-            foreach ($mail_labels->response->labels as $label) {
-                $exists = MailLabel::where(['character_id' => $token->character_id, 'label_id' => $label->label_id])->first();
+        if ($mail_labels instanceof Curl)
+        {
+            if ($mail_labels->httpStatusCode == 200)
+            {
+                foreach ($mail_labels->response->labels as $label) {
+                    $exists = MailLabel::where(['character_id' => $token->character_id, 'label_id' => $label->label_id])->first();
 
-                if (!is_null($exists)) {
-                    MailLabel::where(['character_id' => $token->character_id, 'label_id' => $label->label_id])->update([
-                        'label_name' => $label->name,
-                        'label_unread_count' => (isset($label->unread_count)) ? $label->unread_count : null
-                    ]);
-                } else {
-                    MailLabel::create([
-                        'character_id' => $token->character_id,
-                        'label_id' => $label->label_id,
-                        'label_name' => $label->name,
-                        'label_unread_count' => (isset($label->unread_count)) ? $label->unread_count : null
-                    ]);
+                    if (!is_null($exists)) {
+                        MailLabel::where(['character_id' => $token->character_id, 'label_id' => $label->label_id])->update([
+                            'label_name' => $label->name,
+                            'label_unread_count' => (isset($label->unread_count)) ? $label->unread_count : null
+                        ]);
+                    } else {
+                        MailLabel::create([
+                            'character_id' => $token->character_id,
+                            'label_id' => $label->label_id,
+                            'label_name' => $label->name,
+                            'label_unread_count' => (isset($label->unread_count)) ? $label->unread_count : null
+                        ]);
+                    }
                 }
             }
-
-            return true;
+            if ($mail_labels->httpStatusCode >= 400 && $mail_labels->httpStatusCode < 500) {
+                $this->token->disable_token($character_id);
+                return $this->token->get_token();
+            }
+            return $mail_labels;
         }
     }
-
-    public function get_character_mailing_lists($character_id)
+    public function get_character_mailing_lists ($character_id)
     {
         $token = $this->token->get_token($character_id);
-        if ($token->disabled) {
-            return false;
+        if ($token instanceof Token) {
+            if ($token->disabled)
+            {
+                return $token;
+            }
         }
-        $mailing_lists = $this->http->get_character_mailing_lists ($token);
-        if ($mailing_lists->httpStatusCode != 200) {
-            return false;
-        }
-        foreach ($mailing_lists->response as $mailing_list) {
-            MailRecipient::firstOrCreate([
-                'character_id' => $token->character_id,
-                'recipient_id' => $mailing_list->mailing_list_id,
-                'recipient_name' => $mailing_list->name
-            ]);
-        }
-        return true;
+        $mailing_lists = $this->http->get_character_mailing_lists($token);
 
-    }
-    /*
-    public function get_character_contacts(Token $token)
-    {
-        $token = $this->token->get_token(Token::where('character_id', Auth::user()->character_id)->first());
-        if ($token->disabled) {
-            return false;
-        }
-        $character_contacts = $this->http->get_character_contacts($token);
-        if ($character_contacts['curl']->httpStatusCode != 200) {
-            return false;
-        } else {
-            if (isset($character_contacts['contacts'])) {
-                foreach ($character_contacts['contacts'] as $contact) {
+        if ($mailing_lists instanceof Curl)
+        {
+            if ($mailing_lists->httpStatusCode == 200)
+            {
 
-                    $contact_known = MailRecipient::where('recipient_id', $contact->contact_id)->first();
-                    if ($contact_known->count() == 0) {
-                        $is_queued = Queue::where('queue_id', $contact->contact_id)->first();
-                        if (is_null($is_queued)) {
-                            $PlaceInQueue = Queue::create([
-                                'queue_id' => $contact->contact_id
+                foreach ($mailing_lists->response as $mailing_list) {
+
+                    $mailing_list_known = MailRecipient::where(['recipient_id' => $mailing_list->mailing_list_id, 'recipient_type' => "mailing_list"])->first();
+                    if (is_null($mailing_list_known))
+                    {
+                        MailRecipient::create([
+                            'character_id' => $character_id,
+                            'recipient_id' => $mailing_list->mailing_list_id,
+                            'recipient_name' => $mailing_list->name,
+                            'recipient_type' => "mailing_list"
+                        ]);
+                    } else {
+                        if ($mailing_list_known->character_id !== $character_id) {
+                            MailRecipient::where('recipient_id', $mailing_list->mailing_list_id)->update([
+                                'recipient_name' => $mailing_list->name
                             ]);
                         }
                     }
-                    $updateOrCreate = CharacterContact::updateOrCreate([
-                        'character_id' => $token->character_id,
-                        'contact_id' => $contact->contact_id
-                    ], [
-                        'character_id' => $token->character_id,
-                        'contact_id' => $contact->contact_id,
-                        'contact_type' => $contact->contact_type
-                    ]);
                 }
             }
-            return true;
+            if ($mailing_lists->httpStatusCode >= 400 && $mailing_lists->httpStatusCode < 500) {
+                $this->token->disable_token($character_id);
+                return $this->token->get_token();
+            }
+            return $mailing_lists;
         }
     }
-    */
+
     public function get_character_mail_headers ($character_id)
     {
         $token = $this->token->get_token($character_id);
-        if ($token->disabled) {
-            return false;
+        if ($token instanceof Token) {
+            if ($token->disabled)
+            {
+                return $token;
+            }
         }
-
         $mail_headers = $this->http->get_character_mail_headers($token);
-        if ($mail_headers->httpStatusCode != 200) {
-            return false;
-        }
 
-        foreach ($mail_headers->response as $mail_header) {
-            $header_exists = MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_header->mail_id])->first();
-            if (is_null($header_exists)) {
-                foreach ($mail_header->recipients as $mail_recipient) {
-                    if ($mail_recipient->recipient_type !== "mailing_list") {
+        if ($mail_headers instanceof Curl)
+        {
+            if ($mail_headers->httpStatusCode == 200)
+            {
+                foreach ($mail_headers->response as $mail_header) {
+                    foreach ($mail_header->recipients as $mail_recipient) {
                         $recipient_known = MailRecipient::where('recipient_id', $mail_recipient->recipient_id)->first();
                         if (is_null($recipient_known)) {
-                            $is_queued = Queue::where('queue_id', $mail_recipient->recipient_id)->first();
+                            if ($mail_recipient->recipient_type === "mailing_list") {
+                                MailRecipient::create([
+                                    'character_id' => $character_id,
+                                    'recipient_id' => $mail_recipient->recipient_id,
+                                    'recipient_name' => "Unknown Mailing List",
+                                    'recipient_type' => "mailing_list"
+                                ]);
+                            } else {
+                                $is_queued = Queue::where('queue_id', $mail_recipient->recipient_id)->first();
+                                if (is_null($is_queued)) {
+                                    $PlaceInQueue = Queue::create([
+                                        'queue_id' => $mail_recipient->recipient_id,
+                                        'location' => 'MailHeaderRecipientLoop'
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                    if ($mail_header->from >= 145000000 && $mail_header->from <= 145000000) {
+                        $sender_known = MailRecipient::where('recipient_id', $mail_header->from)->first();
+                        if (is_null($sender_known)) {
+                            MailRecipient::create([
+                                'character_id' => $character_id,
+                                'recipient_id' => $mail_header->from,
+                                'recipient_name' => "Unknown Mailing List",
+                                'recipient_type' => "mailing_list"
+                            ]);
+                        }
+                    } else {
+                        $sender_known = MailRecipient::where('recipient_id', $mail_header->from)->first();
+                        if (is_null($sender_known)) {
+                            $is_queued = Queue::where('queue_id', $mail_header->from)->first();
                             if (is_null($is_queued)) {
                                 $PlaceInQueue = Queue::create([
-                                    'queue_id' => $mail_recipient->recipient_id,
-                                    'location' => 'MailHeaderRecipientLoop'
+                                    'queue_id' => $mail_header->from,
+                                    'location' => "MailHeaderSenderKnown"
                                 ]);
                             }
                         }
                     }
-
-                    // if ($mail_recipient->recipient_type === "mailing_list") {
-                    //     //$mailing_list_known = MailingList::where('laili', $mail_recipient->recipient_id)->first();
-                    //     $mailing_list_known = null;
-                    //     if (is_null($corporation_known)) {
-                    //         $retrieve_corporation = $this->http->retrieve_corporation_data($mail_recipient->recipient_id);
-                    //         $corporation_data = EVECorporation::create([
-                    //             'corporation_id' => $retrieve_corporation['corporation_id'],
-                    //             'corporation_name' => $retrieve_corporation['corporation_name']
-                    //         ]);
-                    //         $recipient_data[] = [
-                    //             'recipient_id' => $corporation_data->character_id,
-                    //             'recipient_name' => $corporation_data->character_name,
-                    //             'recipient_type' => "corporation"
-                    //         ];
-                    //
-                    //     }
-                    // }
-                }
-
-                $sender_known = MailRecipient::where('recipient_id', $mail_header->from)->first();
-                if (is_null($sender_known)) {
-                    $is_queued = Queue::where('queue_id', $mail_header->from)->first();
-                    if (is_null($is_queued)) {
-                        $PlaceInQueue = Queue::create([
-                            'queue_id' => $mail_header->from,
-                            'location' => "MailHeaderSenderKnown"
+                    $header = MailHeader::where(['character_id' => $character_id, 'mail_id' => $mail_header->mail_id])->first();
+                    if (is_null($header)) {
+                        MailHeader::create([
+                            'character_id' => $character_id,
+                            'mail_id' => $mail_header->mail_id,
+                            'mail_subject' => $mail_header->subject,
+                            'mail_sender' => $mail_header->from,
+                            'mail_sent_date' => Carbon::createFromTimestamp(strtotime($mail_header->timestamp))->toDateTimeString(),
+                            'mail_labels' => implode(',',$mail_header->labels),
+                            'mail_recipient' => json_encode($mail_header->recipients),
+                            'is_read' => $mail_header->is_read,
+                            'raw_json' => json_encode($mail_header)
+                        ]);
+                    } else {
+                        MailHeader::where(['character_id' => $character_id, 'mail_id' => $mail_header->mail_id])->update([
+                            'mail_sent_date' => Carbon::createFromTimestamp(strtotime($mail_header->timestamp))->toDateTimeString(),
+                            'mail_labels' => implode(',',$mail_header->labels),
+                            'is_read' => $mail_header->is_read,
+                            'raw_json' => json_encode($mail_header)
                         ]);
                     }
-                }
 
-                MailHeader::create([
-                    'character_id' => $token->character_id,
-                    'mail_id' => $mail_header->mail_id,
-                    'mail_subject' => $mail_header->subject,
-                    'mail_sender' => $mail_header->from,
-                    'mail_sent_date' => $mail_header->timestamp,
-                    'mail_labels' => implode(',',$mail_header->labels),
-                    'mail_recipient' => json_encode($mail_header->recipients),
-                    'is_read' => $mail_header->is_read
-                ]);
-            } else {
-                MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_header->mail_id])->update([
-                    'is_read' => $mail_header->is_read
-                ]);
+                }
+                $header_update = MailHeaderUpdate::where('character_id', $character_id)->first();
+                if (is_null($header_update)) {
+                    MailHeaderUpdate::create([
+                        'character_id', $character_id,
+                        'last_header_update' => Carbon::now()->toDateTimeString()
+                    ]);
+                } else {
+                    MailHeaderUpdate::where('character_id', $character_id)->update([
+                        'last_header_update' => Carbon::now()->toDateTimeString()
+                    ]);
+                }
             }
-            MailHeaderUpdate::updateOrCreate([
-                'character_id' => $token->character_id
-            ], [
-                'last_header_update' => Carbon::now()->toDateTimeString()
-            ]);
+            if ($mail_headers->httpStatusCode >= 400 && $mail_headers->httpStatusCode < 500) {
+                $this->token->disable_token($character_id);
+                return $this->token->get_token($character_id);
+            }
+            return $mail_headers;
         }
 
-
-        return true;
     }
-
-
 
     public function id_search($search_string)
     {
         $get_search = $this->http->get_search($search_string);
-        if ($get_search && $get_search->httpStatusCode == 200) {
-            foreach ($get_search->response as $response) {
-                $firstOrCreate = MailRecipient::firstOrCreate([
-                    'recipient_id' => $response->id,
-                    'recipient_name' => $response->name,
-                    'recipient_type' => $response->category
-                ]);
+        if ($get_search instanceof Curl) {
+            if ($get_search && $get_search->httpStatusCode == 200) {
+                foreach ($get_search->response as $response) {
+                    $firstOrCreate = MailRecipient::firstOrCreate([
+                        'recipient_id' => $response->id,
+                        'recipient_name' => $response->name,
+                        'recipient_type' => $response->category
+                    ]);
+                }
             }
-            return count($get_search->response);
+            return $get_search;
         }
-        return false;
+
     }
 
     public function get_mail_body ($character_id, $mail_id)
@@ -298,7 +291,7 @@ class MailController extends Controller
     {
         $token = $this->token->get_token($character_id);
         if ($token->disabled) {
-            return false;
+            return $token;
         }
         $job = (new PostCharacterMail($character_id, $message_payload))
                 ->delay(Carbon::now()->addSeconds(5));
@@ -362,6 +355,14 @@ class MailController extends Controller
         if (!isset($user->preferences()['new_mail_notifications']) || $user->preferences()['new_mail_notifications'] == 0) {
             return false;
         }
+        if (is_null($user->email()->first())) {
+            $user->email()->delete();
+            $user->update([
+                'preferences' => null
+            ]);
+            return false;
+        }
+
         $mail_headers = MailHeader::where([
             'character_id' => $user->character_id,
             'is_known' => 0,

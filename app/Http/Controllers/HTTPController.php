@@ -192,6 +192,7 @@ class HTTPController extends Controller
         return $curl_request;
     }
 
+
     public function get_character_mailing_lists (Token $token)
     {
         $curl_request = $this->curl_request([
@@ -252,47 +253,10 @@ class HTTPController extends Controller
             ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]
         ], 'post', config('services.eve.esi_url')."/v1/characters/{$token->character_id}/mail/", json_encode($payload), 201);
         $this->http_logger($token->character_id, $curl_request, $payload);
-        // if ($curl_request->httpStatusCode ==201){
-        //     Log::info("Mail Sent Successfully. New Mail {$curl_request->response} generated");
-        // }
         return $curl_request;
     }
 
-    public function get_character_contacts (Token $token)
-    {
-        $character_contacts = [];
-        for($page=1;$page<10;$page++)
-        {
 
-            $curl_request = $this->curl_request([
-                ['key' => "Authorization",'value' => "Bearer ". $token->access_token],
-                ['key' => "Content-Type",'value' => "application/json"],
-                ['key' => "User-Agent", 'value' => config('services.eve.user_agent')]
-            ], 'get', config('services.eve.esi_url')."/v1/characters/{$token->character_id}/contacts/", [
-                'page' => $page,
-                'datasource' => 'tranquility'
-            ], 200, 5);
-
-            $this->http_logger($token->character_id, $curl_request);
-            if ($curl_request->httpStatusCode == 200) {
-
-                if (!empty($curl_request->response)) {
-
-                    foreach ((array)$curl_request->response as $contact) {
-                        $character_contacts[] = $contact;
-                        $this->http_logger($token->character_id, $curl_request, null);
-                    }
-                } else {
-                    break 1;
-                }
-            }
-            usleep(500);
-        }
-        return [
-            'curl' => $curl_request,
-            'contacts' => $character_contacts
-        ];
-    }
 
 
 

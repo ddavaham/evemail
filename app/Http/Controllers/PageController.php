@@ -5,7 +5,9 @@ namespace EVEMail\Http\Controllers;
 use DB;
 use Validator;
 use Session;
+use Curl\Curl;
 use EVEMail\Token;
+use EVEMail\Queue;
 use EVEMail\MailHeader;
 use EVEMail\MailHeaderUpdate;
 use Carbon\Carbon;
@@ -81,35 +83,112 @@ class PageController extends Controller
         (!Auth::user()->is_new) ? redirect()->route('dashboard') : null;
 
         if ($this->request->isMethod('post')) {
-
-
             $mail_labels = $this->mail->get_character_mail_labels(Auth::user()->character_id);
-
-            $mailing_lists = $this->mail->get_character_mailing_lists (Auth::user()->character_id);
-            $mail_headers = $this->mail->get_character_mail_headers(Auth::user()->character_id);
-            //$character_contacts = $this->get_character_contacts(Auth::user()->character_id);
-
-            $process_queue = $this->mail->process_queue();
-
-            if ($mail_headers && $mail_labels && $mailing_lists) {
-                \EVEMail\User::where('character_id', Auth::user()->character_id)->update([
-                    'is_new' => 0
-                ]);
-                $this->request->session()->flash('alert', [
-                    "header" => "Mail Downloaded Successfully",
-                    'message' => "We have downloaded your mails successfully. Bear with us while we continue downloading the names of all the character that are part of those mails. You can access your mails, but until our minions have reached out to CCP to get the character data for those emails, we won't know whose name to display to you. Thanks for using EVEMail.Space",
-                    'type' => 'success',
-                    'close' => 1
-                ]);
-                return redirect()->route('dashboard');
+            if ($mail_labels instanceof Token) {
+                if ($mail_labels->disabled) {
+                    $this->request->session()->flash('alert', [
+                        "header" => "Your Token has been disabled.",
+                        'message' => "Our system has detected that we were not authorized to use your token on your behalf. Please login to our system again so that we are authorized.",
+                        'type' => 'info',
+                        'close' => 1
+                    ]);
+                    Auth::logout();
+                    return redirect()->route('login');
+                } else {
+                    $this->request->session()->flash('alert', [
+                        "header" => "An Error has occurred.",
+                        'message' => "Our system encountered an error when attempting to fetch your data. Please try again",
+                        'type' => 'info',
+                        'close' => 1
+                    ]);
+                    return redirect()->route('dashboard.welcome');
+                }
             }
-            $this->request->session()->flash('alert', [
-                'header' => "Disabled Token Detected",
-                'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
-                'type' => 'danger',
-                'close' => 1
-            ]);
-            return redirect()->route('logout');
+            $mailing_lists = $this->mail->get_character_mailing_lists (Auth::user()->character_id);
+            if ($mailing_lists instanceof Token) {
+                if ($mailing_lists->disabled) {
+                    $this->request->session()->flash('alert', [
+                        "header" => "Your Token has been disabled.",
+                        'message' => "Our system has detected that we were not authorized to use your token on your behalf. Please login to our system again so that we are authorized.",
+                        'type' => 'info',
+                        'close' => 1
+                    ]);
+                    Auth::logout();
+                    return redirect()->route('login');
+                } else {
+                    $this->request->session()->flash('alert', [
+                        "header" => "An Error has occurred.",
+                        'message' => "Our system encountered an error when attempting to fetch your data. Please try again",
+                        'type' => 'info',
+                        'close' => 1
+                    ]);
+                    return redirect()->route('dashboard.welcome');
+                }
+            }
+            $mail_headers = $this->mail->get_character_mail_headers(Auth::user()->character_id);
+            if ($mail_headers instanceof Token) {
+                if ($mail_headers->disabled) {
+                    $this->request->session()->flash('alert', [
+                        "header" => "Your Token has been disabled.",
+                        'message' => "Our system has detected that we were not authorized to use your token on your behalf. Please login to our system again so that we are authorized.",
+                        'type' => 'info',
+                        'close' => 1
+                    ]);
+                    Auth::logout();
+                    return redirect()->route('login');
+                } else {
+                    $this->request->session()->flash('alert', [
+                        "header" => "An Error has occurred.",
+                        'message' => "Our system encountered an error when attempting to fetch your data. Please try again",
+                        'type' => 'info',
+                        'close' => 1
+                    ]);
+                    dd($mail_headers);
+                    return redirect()->route('dashboard.welcome');
+                }
+            }
+
+            if ($mail_headers instanceof Curl && $mail_labels instanceof Curl && $mailing_lists instanceof Curl) {
+
+
+                if ($mail_headers->httpStatusCode == 200 && $mail_labels->httpStatusCode == 200 && $mailing_lists->httpStatusCode == 200) {
+                    \EVEMail\User::where('character_id', Auth::user()->character_id)->update([
+                        'is_new' => 0
+                    ]);
+                    $this->request->session()->flash('alert', [
+                        "header" => "Mail Downloaded Successfully",
+                        'message' => "We have downloaded your mails successfully. Bear with us while we continue downloading the names of all the character that are part of those mails. You can access your mails, but until our minions have reached out to CCP to get the character data for those emails, we won't know whose name to display to you. Thanks for using EVEMail.Space",
+                        'type' => 'success',
+                        'close' => 1
+                    ]);
+                    return redirect()->route('dashboard');
+                } else {
+                    if ($mail_headers->httpStatusCode !== 200) {
+                        $this->request->session()->flash('alert', [
+                            "header" => "Unable to Download Your Mail Headers",
+                            'message' => "CCP ESI API is responding with a less than satisfactory response at the moment. Depending on what it is, then you API Token may have been disabled and you will have to log back into this service. If you have any questions, please send a mail in game to David Davaham.",
+                            'type' => 'info',
+                            'close' => 1
+                        ]);
+                    } else if ($mail_labels->httpStatusCode !== 200) {
+                        $this->request->session()->flash('alert', [
+                            "header" => "Unable to Download Mail Labels",
+                            'message' => "CCP ESI API is responding with a less than satisfactory response at the moment. Depending on what it is, then you API Token may have been disabled and you will have to log back into this service. If you have any questions, please send a mail in game to David Davaham.",
+                            'type' => 'info',
+                            'close' => 1
+                        ]);
+                    } else if ($mailing_lists->httpStatusCode !== 200) {
+                        $this->request->session()->flash('alert', [
+                            "header" => "Unable to Download Mailing Lists",
+                            'message' => "CCP ESI API is responding with a less than satisfactory response at the moment. Depending on what it is, then you API Token may have been disabled and you will have to log back into this service. If you have any questions, please send a mail in game to David Davaham. If you do not have any mailing lists on this account, please let him know that as well.",
+                            'type' => 'info',
+                            'close' => 1
+                        ]);
+                    }
+                    return redirect()->route('dashboard.welcome');
+                }
+            }
+
         }
         return view('pages.welcome');
     }
@@ -117,22 +196,37 @@ class PageController extends Controller
     public function dashboard_fetch ()
     {
         $update_headers = $this->mail->get_character_mail_headers(Auth::user()->character_id);
-        if ($update_headers) {
-            MailHeaderUpdate::firstOrCreate([
-                'character_id' => Auth::user()->character_id,
-                'last_header_update' => Carbon::now()->toDateTimeString()
-            ]);
+        if ($update_headers instanceof Token) {
+            if ($update_headers->disabled) {
+                $this->request->session()->flash('alert', [
+                    "header" => "Your Token has been disabled.",
+                    'message' => "Our system has detected that we were not authorized to use your token on your behalf. Please login to our system again so that we are authorized.",
+                    'type' => 'info',
+                    'close' => 1
+                ]);
+                Auth::logout();
+                return redirect()->route('login');
+            } else {
+                $this->request->session()->flash('alert', [
+                    "header" => "An Error has occurred.",
+                    'message' => "Our system encountered an error when attempting to fetch your data. Please try again",
+                    'type' => 'info',
+                    'close' => 1
+                ]);
+
+                return redirect()->route('dashboard');
+            }
+        }
+        if ($update_headers->httpStatusCode == 200) {
             $this->request->session()->flash('alert', [
                 "header" => "Mailbox Updated Successfully",
                 'message' => "We have successfully updated your inbox.",
                 'type' => 'info',
                 'close' => 1
             ]);
-            $this->mail->process_queue();
             return redirect()->route('dashboard');
-        } else {
+        } else if ($update_headers->httpStatusCode > 200) {
             if (Auth::user()->token()->first()->disabled) {
-                Auth::user()->token()->delete();
                 $this->request->session()->flash('alert', [
                     'header' => "Disabled Token Detected",
                     'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
@@ -169,16 +263,25 @@ class PageController extends Controller
                 if (!is_null($this->request->get('search'))) {
                     if ($this->request->get('search') === "ccp" && !is_null($this->request->get('recipient_name'))) {
                         $id_search = $this->mail->id_search($this->request->get('recipient_name'));
-                        if (!is_numeric($id_search) || $id_search == 0) {
+                        if ($id_search instanceof Curl) {
+                            if ($id_search->httpStatusCode !== 200) {
+                                $this->request->session()->flash('alert', [
+                                    "header" => "Search Complete.",
+                                    'message' => "Unfortunately, CCP did not have an additional results. Please try again with a different search phrase.",
+                                    'type' => 'info',
+                                    'close' => 1
+                                ]);
+                                return redirect()->route('mail.send.recipient');
+                            }
+                        } else {
                             $this->request->session()->flash('alert', [
-                                "header" => "Search Complete.",
-                                'message' => "Unfortunately, CCP did not have an additional results. Please try again with a different search phrase.",
+                                "header" => "Unexpected Results",
+                                'message' => "I saw that going differently in my head. Try again and lets see if it works this time.",
                                 'type' => 'info',
                                 'close' => 1
                             ]);
                             return redirect()->route('mail.send.recipient');
                         }
-
                     } else {
                         $this->request->session()->flash('alert', [
                             "header" => "Houston, We have an problem",
@@ -492,7 +595,21 @@ class PageController extends Controller
         $message_payload['body'] = $this->request->session()->get('mail.body');
         $message_payload['approved_cost'] = 10000;
         $send_message = $this->mail->send_message(Auth::user()->character_id, $message_payload);
-        if ($send_message) {
+        if ($send_message instanceof Token) {
+            if ($send_message->disabled) {
+                $this->request->session()->flash('alert', [
+                    "header" => "Your Token has been disabled.",
+                    'message' => "Our system has detected that we were not authorized to use your token on your behalf. Please login to our system again so that we are authorized.",
+                    'type' => 'info',
+                    'close' => 1
+                ]);
+                Auth::logout();
+                return redirect()->route('login');
+            }
+
+            dd("Instance of Token that is not disabled", $token);
+        } else if ($send_message) {
+
             $this->request->session()->forget('recipients');
             $this->request->session()->forget('mail');
             $this->request->session()->flash('alert', [
@@ -820,9 +937,7 @@ class PageController extends Controller
 
     public function testing()
     {
-        $headers = $this->mail->get_character_mail_headers(95923084);
-        //$id = $this->http->post_universe_names([1017240662482]);
-        dd($headers);
+
     }
 
 

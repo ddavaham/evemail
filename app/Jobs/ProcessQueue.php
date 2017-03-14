@@ -2,13 +2,14 @@
 
 namespace EVEMail\Jobs;
 
+use Carbon\Carbon;
 use EVEMail\Queue;
 use EVEMail\MailRecipient;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use EVEMail\Http\Controller\HttpController;
+use EVEMail\Http\Controllers\HTTPController;
 
 class ProcessQueue implements ShouldQueue
 {
@@ -21,10 +22,10 @@ class ProcessQueue implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($ids)
+    public function __construct()
     {
 
-        $this->http = new HttpController();
+        $this->http = new HTTPController();
     }
 
     /**
@@ -34,7 +35,7 @@ class ProcessQueue implements ShouldQueue
      */
     public function handle()
     {
-        $queued_ids = Queue::select('queue_id')->limit(250)->get();
+        $queued_ids = Queue::select('queue_id')->limit(100)->get();
 
         if (!is_null($queued_ids) && $queued_ids->count() > 0) {
             $ids = [];

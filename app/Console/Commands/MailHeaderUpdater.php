@@ -46,7 +46,7 @@ class MailHeaderUpdater extends Command
      */
     public function handle()
     {
-        $headers = MailHeaderUpdate::orderby('last_header_update', 'asc')->limit(30)->get();
+        $headers = MailHeaderUpdate::orderby('last_header_update', 'asc')->limit(100)->get();
         if (!is_null($headers)) {
             foreach ($headers as $header) {
                 $job = (new GetCharacterMailHeaders($header->character_id))

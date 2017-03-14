@@ -2,26 +2,23 @@
 
 namespace EVEMail\Console\Commands;
 
-use Carbon\Carbon;
-use EVEMail\Queue;
 use Illuminate\Console\Command;
 
-
-class ProcessQueue extends Command
+class PurgeDisabledTokens extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'mail:process_queue';
+    protected $signature = 'command:name';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Processes The Queue';
+    protected $description = 'Command description';
 
     /**
      * Create a new command instance.
@@ -40,13 +37,6 @@ class ProcessQueue extends Command
      */
     public function handle()
     {
-        $queue = Queue::get();
-        if ($queue->count() > 0) {
-            $job = (new \EVEMail\Jobs\ProcessQueue())
-                    ->delay(Carbon::now()->addSeconds(5));
-            dispatch($job);
-        }
-
-
+        //
     }
 }

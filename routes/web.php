@@ -67,4 +67,4 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/welcome', 'PageController@dashboard_welcome')->name('dashboard.welcome.post');
 });
 
-// Route::get('/testing', 'PageController@testing');
+Route::get('/testing', 'PageController@testing');

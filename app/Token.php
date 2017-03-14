@@ -12,7 +12,7 @@ class Token extends Model
     protected $primaryKey = 'character_id';
 
     protected $fillable = [
-        'character_id', 'access_token', 'refresh_token', 'token_expiry', 'scopes', 'token_type'
+        'character_id', 'access_token', 'refresh_token', 'token_expiry', 'scopes', 'token_type', 'disabled'
     ];
 
     public static function update_token($character_data,$token_data)

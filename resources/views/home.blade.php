@@ -51,6 +51,17 @@
                        @else
                            <a href="{{ route('login') }}" class="btn btn-primary btn-lg">Login Now</a>
                        @endif
+                       <!-- <div class="row">
+                           <div class="col-md-12">
+                               <br />
+                               <div class="alert alert-warning">
+                                   <h3>Site is Actively being worked on</h3>
+                                   <p>
+                                       Welcome to EVEMail. If this is your first time, I want to apologize. We have encountered a few bugs in our site, and there are no mechanisms in places for us to work on the site and use the same database without having it up and open to the public. With that said, if you want to, go ahead and log in, but i am not promising that the site is up and working.<br /><br />If you are a returning visitor, read above. The site is down and I apologize. We are working to get it back up ASAP. Thank You<br /><br />Thank You,<br />David Davaham<br />The Developer
+                                   </p>
+                               </div>
+                           </div>
+                       </div> -->
                    </div>
                </div>
            </div>

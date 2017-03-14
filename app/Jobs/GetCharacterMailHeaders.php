@@ -37,7 +37,7 @@ class GetCharacterMailHeaders implements ShouldQueue
     {
         $this->mail->get_character_mail_headers($this->character_id);
         $this->mail->check_for_unknown_headers($this->character_id);
-        $this->mail->process_queue();
+        //$this->mail->process_queue();
     }
 
     public function __destruct(){
