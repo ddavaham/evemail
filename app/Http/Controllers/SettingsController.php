@@ -41,10 +41,18 @@ class SettingsController extends Controller
         if ($this->request->isMethod('post') && $this->request->has('action')) {
             if ($this->request->action === "delete_character_email") {
                 Auth::user()->email()->delete();
+                $preferences = json_decode(Auth::user()->preferences, true);
+                if (isset($preferences['new_mail_notifications'])) {
+                    unset($preferences['new_mail_notifications']);
+                }
+                if (count($preferences) == 0) {
+                    $preferences = null;
+                } else {
+                    $preferences = json_encode($preferences);
+                }
                 Auth::user()->update([
-                    'preferences' => null
+                    'preferences' => $preferences
                 ]);
-
                 $this->request->session()->flash('alert', [
                     "header" => "Email Setting Updated Successfully",
                     'message' => "We have deleted your email address from our system and reset your preferences.",
@@ -90,38 +98,50 @@ class SettingsController extends Controller
         return view('settings.email');
     }
 
-    public function verify($vCode)
+    public function action($action, $vCode = null)
     {
-        $validator = Validator::make(['vCode' => $vCode], [
-            'vCode' => "required|size:255|string",
+        if ($action === "verify") {
+            $validator = Validator::make(['vCode' => $vCode], [
+                'vCode' => "required|size:255|string",
 
-        ], [
-            'vCode.required' => "You do realize that the point of this is for you to give me an email address don't you, because I didn't get one. Try again please",
-            'vCode.size' => "Your verification code is not the right length, which means that it was probably trimed. Please try again, and if you copyed the URL in to the address bar, please try clicking the button in the URL.",
-            'vCode.string' => "The vCode you submitted is invalid. Please delete the email address listed above and try again."
-        ]);
-        if ($validator->fails()) {
-            return redirect()->route('settings.email')->withErrors($validator);
-        }
-        $update = Auth::user()->email()->where(['email_verification_code' => $vCode, 'verified' => 0])->update([
-            'verified' => 1
-        ]);
-        if (!$update) {
+            ], [
+                'vCode.required' => "You do realize that the point of this is for you to give me an email address don't you, because I didn't get one. Try again please",
+                'vCode.size' => "Your verification code is not the right length, which means that it was probably trimed. Please try again, and if you copyed the URL in to the address bar, please try clicking the button in the URL.",
+                'vCode.string' => "The vCode you submitted is invalid. Please delete the email address listed above and try again."
+            ]);
+            if ($validator->fails()) {
+                return redirect()->route('settings.email')->withErrors($validator);
+            }
+            $update = Auth::user()->email()->where(['email_verification_code' => $vCode, 'verified' => 0])->update([
+                'verified' => 1
+            ]);
+            if (!$update) {
+                $this->request->session()->flash('alert', [
+                    "header" => "Houston, We have a probelm",
+                    'message' => "We were unable to update our record with  your verified email address. Please return to your inbox and try one more time. If the problem persits, please create an issue on GitHub or send a mail to David Davaham",
+                    'type' => 'info',
+                    'close' => 1
+                ]);
+                return redirect()->route('settings.email');
+            }
             $this->request->session()->flash('alert', [
-                "header" => "Houston, We have a probelm",
-                'message' => "We were unable to update our record with  your verified email address. Please return to your inbox and try one more time. If the problem persits, please create an issue on GitHub",
+                "header" => "Email Verified Successfully",
+                'message' => "Thank You for verifing your email address. Please proceed to your preferences now so that you can opt into the various features that are offered by EVEMail",
                 'type' => 'info',
                 'close' => 1
             ]);
             return redirect()->route('settings.email');
         }
-        $this->request->session()->flash('alert', [
-            "header" => "Email Verified Successfully",
-            'message' => "Thank You for verifing your email address. Please proceed to your preferences now so that you can opt into the various features that are offered by EVEMail",
-            'type' => 'info',
-            'close' => 1
-        ]);
-        return redirect()->route('settings.email');
+        if ($action === "resend") {
+            Mail::to(Auth::user()->email()->first()->character_email)->send(new EmailVerification(Auth::user()));
+            $this->request->session()->flash('alert', [
+                "header" => "Verification Code has been resent successfully",
+                'message' => "We have successfully sent am email address to the email address provided including your verification code.",
+                'type' => 'info',
+                'close' => 1
+            ]);
+            return redirect()->route('settings.email');
+        }
     }
 
     public function preferences ()
@@ -132,10 +152,28 @@ class SettingsController extends Controller
                 //Verifed Valid Preferences Submiteed
                 $preferences =[];
                 foreach ($this->request->get('preferences') as $k=>$preference) {
-
-
                     $k = explode('|',$k);
                     if ($k[1] === "checkbox") {
+                        if (in_array($k[0],config('app.static_attributes.preferences_flat.email'))) {
+                            if (!Auth::user()->email()->first()) {
+                                $this->request->session()->flash('alert', [
+                                    "header" => "Invalid Page Request",
+                                    'message' => "You must have an email address attached to your account before being about to access the Notification Preferences page. Please use this page to set and verify an email address",
+                                    'type' => 'danger',
+                                    'close' => 1
+                                ]);
+                                return redirect()->route('settings.email');
+                            }
+                            if (!Auth::user()->email()->first()->verified) {
+                                $this->request->session()->flash('alert', [
+                                    "header" => "Invalid Page Request",
+                                    'message' => "You must verify your email address before you can enable any of these options. Please check your inbox for a verification link.",
+                                    'type' => 'danger',
+                                    'close' => 1
+                                ]);
+                                return redirect()->route('settings.email');
+                            }
+                        }
                         $preferences[$k[0]] = ($preference === "on") ? 1 : 0;
                     } else if ($k[1] === "select" && !empty($preference)) {
                         $preferences[$k[0]] = $preference;
@@ -157,17 +195,8 @@ class SettingsController extends Controller
             ]);
             return redirect()->route('settings.preferences');
         }
-        if (!Auth::user()->email()->first()) {
-            $this->request->session()->flash('alert', [
-                "header" => "Invalid Page Request",
-                'message' => "You must have an email address attached to your account before being about to access the Notification Preferences page. Please use this page to set and verify an email address",
-                'type' => 'danger',
-                'close' => 1
-            ]);
-            return redirect()->route('settings.email');
-        }
         $preferences = json_decode(Auth::user()->preferences, true);
-        
+
         return view('settings.preferences', [
             'preferences' => $preferences,
             'user_labels' => MailLabel::where('character_id', Auth::user()->character_id)->get()

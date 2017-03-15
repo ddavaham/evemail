@@ -229,8 +229,15 @@ return [
     ],
 
     'static_attributes' => [
+        'preferences_flat' => [
+            'email' => [
+                'new_mail_notifications'
+            ]
+        ],
         'preferences' => [
-            ['name' => "New Mail Notifications", 'description' => 'Receive Notifications about new mails in your inbox when the system detects them','value' => 'new_mail_notifications']
+            'email' => [
+                ['name' => "New Mail Notifications", 'description' => 'Receive Notifications about new mails in your inbox when the system detects them','value' => 'new_mail_notifications']
+            ]
         ]
     ]
 

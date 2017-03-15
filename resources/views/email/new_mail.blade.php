@@ -35,7 +35,8 @@
               @endforeach
 
             </table>
-            <a href="{{ route('login') }}">Click Here to log into Your EVEMail Account</a> 
+            <br />
+            <a href="{{ route('login') }}">Click Here to log into Your EVEMail Account</a>
             <p>Thank You,<br />EVEMail Admins</p>
         </div>
     </body>

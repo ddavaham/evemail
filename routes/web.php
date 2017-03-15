@@ -57,7 +57,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/settings', 'SettingsController@overview')->name('settings.post');
     Route::get('/settings/email', 'SettingsController@email')->name('settings.email');
     Route::post('/settings/email', 'SettingsController@email')->name('settings.email.post');
-    Route::get('/settings/email/verify/{vCode?}', 'SettingsController@verify')->name('settings.email.verify');
+    Route::get('/settings/email/{action}/{vCode?}', 'SettingsController@action')->name('settings.email.action');
     Route::get('/settings/preferences', 'SettingsController@preferences')->name('settings.preferences');
     Route::post('/settings/preferences', 'SettingsController@preferences')->name('settings.preferences.post');
     Route::get('/settings/update/labels', 'SettingsController@construction')->name('settings.labels');

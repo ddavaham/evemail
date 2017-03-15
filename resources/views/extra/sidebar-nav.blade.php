@@ -25,6 +25,7 @@
                 {{ $label->label_name }}
             </a>
         @endforeach
+        <a href="#" class="list-group-item disabled">Update Labels (Coming Soon)</a>
     </div>
     <h4>Mailing Lists (Coming Soon)</h4>
     <div class="list-group">
@@ -39,5 +40,7 @@
         @else
             <li class="list-group-item">You are not subscribed to any mailing lists</li>
         @endif
+        <a href="#" class="list-group-item disabled">Update Mailing Lists (Coming Soon)</a>
     </div>
+
 </div>

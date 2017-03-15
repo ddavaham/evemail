@@ -46,7 +46,7 @@
                                       <a href="https://evewho.com/corp/{{ implode('+', explode(' ', $recipient->recipient_name)) }}" class="btn btn-default" target="_blank">{{ $recipient->recipient_name }}</a>
                                   @endif
                                   @if ($recipient->recipient_type === "alliance")
-                                      <a href="https://evewho.com/alli/{{ implode('+', explode(' ', $recipient->recipient_name)) }}" class="btn btn-default" target="_blank">{{ $recipient->recipient_name }}</button>
+                                      <a href="https://evewho.com/alli/{{ implode('+', explode(' ', $recipient->recipient_name)) }}" class="btn btn-default" target="_blank">{{ $recipient->recipient_name }}</a>
                                   @endif
                               @endforeach
                           </td>

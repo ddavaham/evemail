@@ -45,7 +45,7 @@
                        <h1>Welcome to EVEMail.</h1>
                        <h3>The Webmail Client of the EVE Online Universe</h3>
                        <br>
-                       <a href="#about" class="btn btn-default btn-lg">Find Out More</a>
+                       <a href="{{ route('services') }}" class="btn btn-default btn-lg">Find Out More</a>
                        @if (Auth::check())
                            <a href="{{ route('dashboard') }}" class="btn btn-primary btn-lg">View My Dashboard</a>
                        @else

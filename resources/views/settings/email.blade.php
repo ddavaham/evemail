@@ -62,17 +62,37 @@
 
                 @if (!is_null(Auth::user()->email()->first()))
                     <div class="col-md-6">
-                        <ul class="list-group">
-                            <li class="list-group-item text-center active">
-                                Email Address Currently on File
-                            </li>
-                            <li class="list-group-item">
-                                <div class="pull-right">
-                                    <a href="#" data-toggle="modal" data-target="#deleteEmailAddressModel"> Delete</a>
-                                </div>
-                                {{ Auth::user()->email()->first()->character_email }}
-                            </li>
-                        </ul>
+                        <div class="panel panel-default">
+                            <div class="panel-heading text-center">
+                                <h4>Email Address Currently on File</h4>
+                            </div>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <td>
+                                        {{ Auth::user()->email()->first()->character_email }}
+                                    </td>
+                                    <td>
+                                        <a href="#" data-toggle="modal" data-target="#deleteEmailAddressModel"> Delete</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Status
+                                    </td>
+                                    <td>
+                                        {{ (Auth::user()->email()->first()->verified) ? "Verified" : "Not Verified" }}
+                                    </td>
+                                </tr>
+                                @if (!Auth::user()->email()->first()->verified)
+                                <tr>
+                                    <td colspan="2">
+                                        <a href="{{ route('settings.email.action', ['action' => 'resend']) }}">Click here to have your verification code resent to you.</a>
+                                    </td>
+
+                                </tr>
+                                @endif
+                            </table>
+                        </div>
                     </div>
                 @endif
             </div>

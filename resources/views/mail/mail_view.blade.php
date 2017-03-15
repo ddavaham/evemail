@@ -38,19 +38,21 @@
                                 To:
                             </td>
                             <td>
-
                                 @if(isset($mail_recipients))
                                     @foreach ($mail_recipients as $recipient_id=>$recipient)
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                {{ $recipient->recipient_name }}&nbsp;&nbsp;&nbsp;<span class="caret"></span>
-                                                <span class="sr-only">Toggle Dropdown</span>
-                                            </button>
-                                            @if($header->mail_sender !== $recipient_id)
-                                                <ul class="dropdown-menu">
-                                                    <li><a href="{{ route('mail.reply.build', ['mail_id' => $header->mail_id, 'recipient_id' => $recipient_id, 'first_time' => 1]) }}">Reply To This Recipient</a></li>
-                                                </ul>
-                                             @endif
+                                            @if ($recipient->recipient_type === "character")
+                                                <a href="https://evewho.com/pilot/{{ implode('+', explode(' ', $recipient->recipient_name)) }}" class="btn btn-default" target="_blank">{{ $recipient->recipient_name }}</a>
+                                            @endif
+                                            @if ($recipient->recipient_type === "corporation")
+                                                <a href="https://evewho.com/corp/{{ implode('+', explode(' ', $recipient->recipient_name)) }}" class="btn btn-default" target="_blank">{{ $recipient->recipient_name }}</a>
+                                            @endif
+                                            @if ($recipient->recipient_type === "alliance")
+                                                <a href="https://evewho.com/alli/{{ implode('+', explode(' ', $recipient->recipient_name)) }}" class="btn btn-default" target="_blank">{{ $recipient->recipient_name }}</a>
+                                            @endif
+                                            @if ($recipient->recipient_type === "mailing_list")
+                                                <button class="btn btn-default">{{ $recipient->recipient_name }}</button>
+                                            @endif
                                         </div>
                                     @endforeach
                                 @else
@@ -82,7 +84,7 @@
                                 <a href="{{ route('mail.reply.build', ['mail_id' => $header->mail_id, 'first_time' => 1]) }}" class="btn btn-primary btn-block @if($header->mail_sender == Auth::user()->character_id) disabled @endif">Reply To All</a>
                             </div>
                             <div class="col-md-4">
-                                
+
                                 <button type="button" class="btn btn-danger btn-block" data-toggle="modal" data-target="#deleteMailModel">
                                     Delete this Mail
                                 </button>
