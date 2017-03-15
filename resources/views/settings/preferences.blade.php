@@ -39,24 +39,54 @@
                 Use this page to manage your email settings with the EVEMail System
             </p>
             @include('extra.alert')
-            <div class="row">
-                <div class="col-md-8">
-                    <form action="{{ route('settings.preferences.post') }}" method="post">
-                        @foreach (config('app.static_attributes.preferences') as $system_preferences)
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="preferences[{{ $system_preferences['value'] }}]" @if(isset($preferences[$system_preferences['value']]))checked="checked"@endif /> {{ $system_preferences['name'] }}
-                                </label><br />
-                                 {{ $system_preferences['description'] }}
+            <form action="{{ route('settings.preferences.post') }}" method="post">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <h3 class="section-header">Notification Preferences</h3>
+                                @foreach (config('app.static_attributes.preferences') as $system_preferences)
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" name="preferences[{{ $system_preferences['value'] }}|checkbox]" @if(isset($preferences[$system_preferences['value']]))checked="checked"@endif /> {{ $system_preferences['name'] }}
+                                        </label><br />
+                                         {{ $system_preferences['description'] }}
+                                    </div>
+                                @endforeach
                             </div>
-                        @endforeach
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <h3 class="section-header">Site Preferences</h3>
+                                <div class="form-group">
+                                    <label for="dashboard_default_label">Default Mailbox for Dashboard</label>
+                                    <select name="preferences[dashboard_default_label|select]" id="dashboard_default_label" class="form-control">
+                                        <option value=""> --- Please Select a Label --- </option>
+                                        @if (!is_null($user_labels))
+                                            @foreach ($user_labels as $label)
+
+                                                <option value="{{ $label->label_id }}" @if(isset($preferences['dashboard_default_label'])&&$preferences['dashboard_default_label']==$label->label_id)selected="selected"@endif>{{ $label->label_name }}</option>
+                                            @endforeach()
+                                        @else
+                                            <option value=""> --- There are currently no labels available --- </option>
+                                        @endif
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
                         <div class="form-group">
                             {{ csrf_field() }}
                             <button type="submit" class="btn btn-default">Update Preferences</button>
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
     <!-- /.row -->

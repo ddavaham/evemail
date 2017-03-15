@@ -31,7 +31,6 @@
                         <a href="#" class="list-group-item text-center">You don't have any mail in this mailbox.</a>
                     @else
                         @foreach ($mail_headers as $header)
-
                             <a href="{{ route('mail', ['mail_id' => $header->mail_id]) }}" class="list-group-item @if (!$header->is_read) list-group-item-info @endif">
                                 <div class="row">
                                     <div class="col-md-1 hidden-xs hidden-sm">
@@ -44,7 +43,6 @@
                                         </p>
                                     </div>
                                 </div>
-
                             </a>
                         @endforeach
                     @endif

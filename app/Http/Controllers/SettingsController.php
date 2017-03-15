@@ -126,14 +126,21 @@ class SettingsController extends Controller
 
     public function preferences ()
     {
+
         if ($this->request->isMethod('post')) {
             if ($this->request->has('preferences')) {
                 //Verifed Valid Preferences Submiteed
                 $preferences =[];
                 foreach ($this->request->get('preferences') as $k=>$preference) {
-                    $preferences[$k] = ($preference === "on") ? 1 : 0;
-                }
 
+
+                    $k = explode('|',$k);
+                    if ($k[1] === "checkbox") {
+                        $preferences[$k[0]] = ($preference === "on") ? 1 : 0;
+                    } else if ($k[1] === "select" && !empty($preference)) {
+                        $preferences[$k[0]] = $preference;
+                    }
+                }
                 Auth::user()->update([
                     'preferences' => json_encode($preferences)
                 ]);
@@ -160,7 +167,11 @@ class SettingsController extends Controller
             return redirect()->route('settings.email');
         }
         $preferences = json_decode(Auth::user()->preferences, true);
-        return view('settings.preferences', ['preferences' => $preferences]);
+        
+        return view('settings.preferences', [
+            'preferences' => $preferences,
+            'user_labels' => MailLabel::where('character_id', Auth::user()->character_id)->get()
+        ]);
     }
 
     public function construction()

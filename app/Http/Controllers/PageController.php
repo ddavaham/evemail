@@ -196,6 +196,18 @@ class PageController extends Controller
     public function dashboard_fetch ()
     {
         $update_headers = $this->mail->get_character_mail_headers(Auth::user()->character_id);
+        $parameters = [];
+        $user_preferences = Auth::user()->preferences;
+        if (!is_null($user_preferences)) {
+
+            $user_preferences = json_decode($user_preferences, true);
+
+            if (isset($user_preferences['dashboard_default_label'])) {
+                $parameters['label'] = $user_preferences['dashboard_default_label'];
+            }
+
+        }
+
         if ($update_headers instanceof Token) {
             if ($update_headers->disabled) {
                 $this->request->session()->flash('alert', [
@@ -214,7 +226,7 @@ class PageController extends Controller
                     'close' => 1
                 ]);
 
-                return redirect()->route('dashboard');
+                return redirect()->route('dashboard', $parameters);
             }
         }
         if ($update_headers->httpStatusCode == 200) {
@@ -224,7 +236,7 @@ class PageController extends Controller
                 'type' => 'info',
                 'close' => 1
             ]);
-            return redirect()->route('dashboard');
+            return redirect()->route('dashboard', $parameters);
         } else if ($update_headers->httpStatusCode > 200) {
             if (Auth::user()->token()->first()->disabled) {
                 $this->request->session()->flash('alert', [
@@ -241,7 +253,7 @@ class PageController extends Controller
                 'type' => 'danger',
                 'close' => 1
             ]);
-            return redirect()->route('dashboard');
+            return redirect()->route('dashboard', $parameters);
         }
     }
 
@@ -469,7 +481,8 @@ class PageController extends Controller
         }
 
         //Format Appended Text
-        $body = "--------------------------------\r\n";
+        $body = "<br /><br />---- This EVEMail was sent using EVEMail.Space. A Web-based Mail Client for EVEOnline. ----<br /><br />";
+        $body .= "--------------------------------\r\n";
         $body .= "Subject: ". $mail_header->mail_subject."\r\n";
         $body .= "From: ".$recipients[$mail_header->mail_sender]->recipient_name."\r\n";
         $body .= "Sent: ".Carbon::createFromTimestamp(strtotime($mail_header->mail_sent_date))->format('Y.m.d g:i:s')."\r\n";
@@ -592,7 +605,7 @@ class PageController extends Controller
             ];
         }
         $message_payload['subject'] = $this->request->session()->get('mail.subject');
-        $message_payload['body'] = $this->request->session()->get('mail.body');
+        $message_payload['body'] = $this->request->session()->get('mail.body'). "<br /><br />---- This EVEMail was sent using EVEMail.Space. A Web-based Mail Client for EVEOnline. ----<br />";
         $message_payload['approved_cost'] = 10000;
         $send_message = $this->mail->send_message(Auth::user()->character_id, $message_payload);
         if ($send_message instanceof Token) {
