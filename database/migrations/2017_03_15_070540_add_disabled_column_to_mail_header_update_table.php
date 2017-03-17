@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class AddLocationToQueueTable extends Migration
+class AddDisabledColumnToMailHeaderUpdateTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,8 @@ class AddLocationToQueueTable extends Migration
      */
     public function up()
     {
-        Schema::table('queue', function (Blueprint $table) {
-            $table->string('location')->after('queue_id');
+        Schema::table('mail_header_update', function (Blueprint $table) {
+            $table->boolean('disabled')->after('last_header_update');
         });
     }
 
@@ -25,7 +25,7 @@ class AddLocationToQueueTable extends Migration
      */
     public function down()
     {
-        Schema::table('queue', function (Blueprint $table) {
+        Schema::table('mail_header_update', function (Blueprint $table) {
             //
         });
     }

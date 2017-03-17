@@ -11,6 +11,7 @@ class MailList extends Model
     protected $fillable = [
         'character_id',
         'mailing_list_id',
-        'mailing_list_name'
+        'mailing_list_name',
+        'inactive'
     ];
 }

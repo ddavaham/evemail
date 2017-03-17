@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class AddLocationToQueueTable extends Migration
+class AddInactiveColumnToMailingListTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,8 @@ class AddLocationToQueueTable extends Migration
      */
     public function up()
     {
-        Schema::table('queue', function (Blueprint $table) {
-            $table->string('location')->after('queue_id');
+        Schema::table('mailing_list', function (Blueprint $table) {
+            $table->boolean('inactive')->after('mailing_list_name');
         });
     }
 
@@ -25,7 +25,7 @@ class AddLocationToQueueTable extends Migration
      */
     public function down()
     {
-        Schema::table('queue', function (Blueprint $table) {
+        Schema::table('mailing_list', function (Blueprint $table) {
             //
         });
     }

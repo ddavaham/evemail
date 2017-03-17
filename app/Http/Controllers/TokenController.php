@@ -4,6 +4,7 @@ namespace EVEMail\Http\Controllers;
 
 use Carbon\Carbon;
 use EVEMail\Token;
+use EVEMail\MailHeaderUpdate;
 use EVEMail\Http\Controllers\HTTPController;
 
 class TokenController extends Controller
@@ -39,7 +40,11 @@ class TokenController extends Controller
 
 	public function disable_token($character_id)
 	{
+
 		$token = Token::where('character_id', $character_id)->update([
+			"disabled" => 1
+		]);
+		MailHeaderUpdate::where('character_id', $character_id)->update([
 			"disabled" => 1
 		]);
 		return $token;

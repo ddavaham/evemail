@@ -109,7 +109,8 @@ class MailController extends Controller
                             'character_id' => $character_id,
                             'recipient_id' => $mailing_list->mailing_list_id,
                             'recipient_name' => $mailing_list->name,
-                            'recipient_type' => "mailing_list"
+                            'recipient_type' => "mailing_list",
+                            'inactive' => 0
                         ]);
                     } else {
                         if ($mailing_list_known->character_id !== $character_id) {
@@ -117,6 +118,9 @@ class MailController extends Controller
                                 'recipient_name' => $mailing_list->name
                             ]);
                         }
+                        // MailRecipient::where(['recipient_id' => $mailing_list->mailing_list_id, 'character_id' => $character_id])->update([
+                        //     'inactive' => 1
+                        // ]);
                     }
                 }
             }
