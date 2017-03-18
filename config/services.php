@@ -23,11 +23,12 @@ return [
         'client_secret' => env('EVE_CLIENT_SECRET'),
         'callback_url' => env('EVE_CALLBACK_URL'),
         'client_scopes' => "esi-mail.read_mail.v1 esi-mail.organize_mail.v1 esi-mail.send_mail.v1",
-        //esi-characters.read_contacts.v1 esi-characters.write_contacts.v1 esi-ui.open_window.v1 
+        //esi-characters.read_contacts.v1 esi-characters.write_contacts.v1 esi-ui.open_window.v1
         'oauth_url' => "https://login.eveonline.com",
         'esi_url' => "https://esi.tech.ccp.is",
         'img_serv' => "https://imageserver.eveonline.com",
-        'user_agent' => "EVEMail.Space || David Davaham (David Douglas) || ddouglas@douglaswebdev.net"
+        'user_agent' => "EVEMail.Space || David Davaham (David Douglas) || ddouglas@douglaswebdev.net",
+        'evemail_admin_char_id' => env('EVEMAIL_ADMIN_CHAR_ID')
     ]
 
 ];
