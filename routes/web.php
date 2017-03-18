@@ -26,6 +26,8 @@ Route::get('/callback', 'AuthController@callback')->name('callback');
 
 Route::group(['middleware' => 'auth'], function () {
     Route::get('/dashboard/{label_id?}', 'PageController@dashboard')->name('dashboard')->where('label_id', "[0-9]+");
+    Route::get('/dashboard/{label_id}/multiedit', 'PageController@multiedit')->name('dashboard.multiedit')->where('label_id', "[0-9]+");
+    Route::post('/dashboard/{label_id}/multiedit', 'PageController@multiedit')->name('dashboard.multiedit.post')->where('label_id', "[0-9]+");
     Route::get('/dashboard/fetch', 'PageController@dashboard_fetch')->name('dashboard.fetch');
 
     Route::get('/mail/new/build', 'PageController@mail_send_build')->name('mail.send.build');

@@ -77,6 +77,58 @@ class PageController extends Controller
             'label_id' => $label
         ]);
     }
+    public function multiedit ($label)
+    {
+        if (Auth::user()->is_new) {
+            return redirect()->route('dashboard.welcome');
+        }
+
+        if ($this->request->isMethod('post')) {
+            if ($this->request->get('action') === "read") {
+                $mail_ids = $this->request->get('multiedit');
+                $mail_headers = MailHeader::where('character_id', Auth::user()->character_id)->whereIn('mail_id', $mail_ids)->get();
+                foreach ($mail_headers as $header) {
+                    if ($header->is_read) {
+                        $this->mail->mark_mail_unread($header->character_id, $header->mail_id);
+                    }
+                    if (!$header->is_read) {
+                        $this->mail->mark_mail_read($header->character_id, $header->mail_id);
+                    }
+                }
+                return redirect()->route('dashboard.multiedit', ['label_id' => $label]);
+            }
+            if ($this->request->get('action') === "delete") {
+                foreach ($this->request->get('multiedit') as $item) {
+                    $this->mail->delete_mail(Auth::user()->character_id, $item);
+                }
+                $this->request->session()->flash('alert', [
+                    'header' => "Delete Queued Successfully",
+                    'message' => "Your request to delete mail has been submitted successfully. Depending on the load on the server, it my take a minute for the messages to actually disappear from this inbox and in game.",
+                    'type' => "info",
+                    'close' => 1
+                ]);
+                return redirect()->route('dashboard.multiedit', ['label_id' => $label]);
+            }
+        }
+
+        $mail_headers = MailHeader::where('mail_header.character_id', Auth::user()->character_id);
+        $mail_headers->update(['is_known' => 1]);
+        if (!is_null($label)) {
+            $mail_headers = $mail_headers->whereRaw('FIND_IN_SET('. $label .',mail_header.mail_labels) > 0');
+        }
+        $mail_headers = $mail_headers->orderby('mail_header.mail_sent_date', 'desc')->leftJoin('mail_recipient', 'mail_header.mail_sender', '=', 'mail_recipient.recipient_id');
+        $mail_headers = $mail_headers->get();
+        $this->update_label_unread_counter(Auth::user()->character_id, null, "sync");
+        $mail_labels = MailLabel::where('character_id', Auth::user()->character_id)->orderby('label_id', 'asc')->get();
+        $mailing_lists = MailRecipient::where(['character_id' => Auth::user()->character_id, 'recipient_type' => "mailing_list"])->get();
+
+        return view('pages.multiedit', [
+            'mail_headers' => $mail_headers,
+            'mail_labels' => $mail_labels,
+            'mailing_lists' => $mailing_lists,
+            'label_id' => $label
+        ]);
+    }
 
     public function dashboard_welcome()
     {
@@ -724,12 +776,8 @@ class PageController extends Controller
         if (!$header->is_read) {
             $update_label_unread_counter = $this->update_label_unread_counter(Auth::user()->character_id, $mail_id, "sub");
 
-
-            $update_header =  MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->update([
-                'is_read' => 1
-            ]);
             $mark_mail_read = $this->mail->mark_mail_read(Auth::user()->character_id, $header->mail_id);
-            if (!$mark_mail_read && Auth::user()->token()->first()->disabled) {
+            if (!$mark_mail_read) {
                 $this->request->session()->flash('alert', [
                     'header' => "Disabled Token Detected",
                     'message' => "Your Access Token has been disabled by our system due to an invalid response code from CCP. Please login again to correct this issue.",
@@ -774,10 +822,6 @@ class PageController extends Controller
             ]);
             return redirect()->route('logout');
         }
-        MailHeader::where(['character_id' => Auth::user()->character_id, 'mail_id' => $mail_id])->update([
-            'is_read'=> 0
-        ]);
-
         $this->request->session()->flash('alert', [
                 'message' => "As far as we are concerned, you never read that mail.",
                 'type' => 'info',

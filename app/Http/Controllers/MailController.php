@@ -310,6 +310,9 @@ class MailController extends Controller
         if ($token->disabled) {
             return false;
         }
+        MailHeader::where(['character_id' => $character_id, 'mail_id' => $mail_id])->update([
+            'is_read'=> 1
+        ]);
         $data = [
             "read" => true
         ];
@@ -328,6 +331,9 @@ class MailController extends Controller
         $data = [
             "read" => false
         ];
+        MailHeader::where(['character_id' => $character_id, 'mail_id' => $mail_id])->update([
+            'is_read'=> 0
+        ]);
         $job = (new UpdateMetaData($token, $mail_id, $data))
                 ->delay(Carbon::now()->addSeconds(5));
         dispatch($job);

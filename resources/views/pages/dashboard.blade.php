@@ -21,6 +21,11 @@
             @include ('extra.sidebar-nav')
             <div class="col-lg-9">
                 <h2 class="page-header">
+                    @if(!is_null($label_id))
+                        <div class="pull-right">
+                            <a href="{{ route('dashboard.multiedit', ['label_id' => $label_id]) }}" class="btn btn-info">Enter Multiedit Mode</a>
+                        </div>
+                    @endif
                     {{ Auth::user()->character_name }}'s Mailbox
 
                 </h2>
