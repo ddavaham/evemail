@@ -217,7 +217,7 @@ class MailController extends Controller
                 $header_update = MailHeaderUpdate::where('character_id', $character_id)->first();
                 if (is_null($header_update)) {
                     MailHeaderUpdate::create([
-                        'character_id', $character_id,
+                        'character_id' => $character_id,
                         'last_header_update' => Carbon::now()->toDateTimeString()
                     ]);
                 } else {
