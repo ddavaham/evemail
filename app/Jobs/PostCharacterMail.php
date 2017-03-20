@@ -45,7 +45,9 @@ class PostCharacterMail implements ShouldQueue
         $get_token = $this->token->get_token($this->character_id);
         if (!$get_token->disabled) {
             $this->http->post_character_mail($get_token, $this->payload);
+            sleep(1);
             $this->mail->get_character_mail_headers((int)$this->character_id);
+            sleep(1);
             $this->mail->process_queue();
         }
 

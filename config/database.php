@@ -45,7 +45,6 @@ return [
     */
 
     'connections' => [
-
         'mysql' => [
             'driver' => 'mysql',
             'host' => env('DB_HOST'),
@@ -59,8 +58,6 @@ return [
             'strict' => false,
             'engine' => null
         ],
-
-
     ],
 
     /*

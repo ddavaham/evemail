@@ -991,10 +991,10 @@ class PageController extends Controller
         return $token;
     }
 
-    public function testing()
-    {
-
-    }
+    // public function testing()
+    // {
+    //
+    // }
 
 
 }
