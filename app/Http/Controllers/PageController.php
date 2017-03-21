@@ -991,8 +991,8 @@ class PageController extends Controller
         return $token;
     }
 
-    // public function testing()
-    // {
-    //
-    // }
+    public function testing()
+    {
+        $this->mail->check_for_unknown_headers(95923084);
+    }
 }
