@@ -17,7 +17,8 @@ class Kernel extends ConsoleKernel
         "EVEMail\Console\Commands\PurgeOldMailBodies",
         "EVEMail\Console\Commands\ProcessQueue",
         "EVEMail\Console\Commands\PurgeDisabledTokens",
-        "EVEMail\Console\Commands\PurgeNewAccounts"
+        "EVEMail\Console\Commands\PurgeNewAccounts",
+        "EVEMail\Console\Commands\TableSync"
     ];
 
     /**
@@ -34,7 +35,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('mail:purge_old_mails')->hourly();
         $schedule->command('mail:purge_disabled_tokens')->hourly();
         //Runt this Command During Downtime.
-        $schedule->command('mail:purge_new_accounts')->dailyAt('11:05');
+        $schedule->command('mail:purge_new_accounts')->dailyAt('11:05');        
     }
 
     /**
