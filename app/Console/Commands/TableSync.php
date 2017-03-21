@@ -10,7 +10,6 @@ use EVEMail\MailHeader;
 use EVEMail\MailHeaderUpdate;
 use EVEMail\MailRecipient;
 use EVEMail\MailLabel;
-use EVEMail\MailHeaderUpdate;
 
 use Illuminate\Console\Command;
 
