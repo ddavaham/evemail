@@ -4,6 +4,7 @@ namespace EVEMail\Console\Commands;
 
 use EVEMail\User;
 use EVEMail\Token;
+use Carbon\Carbon;
 use EVEMail\MailHeader;
 use EVEMail\MailHeaderUpdate;
 use EVEMail\MailRecipient;
