@@ -103,7 +103,8 @@ class MailController extends Controller
 
                 foreach ($mailing_lists->response as $mailing_list) {
 
-                    $mailing_list_known = MailRecipient::where(['recipient_id' => $mailing_list->mailing_list_id, 'recipient_type' => "mailing_list"])->first();
+                    $mailing_list_known = MailRecipient::where(['recipient_id' => $mailing_list->mailing_list_id])->first();
+
                     if (is_null($mailing_list_known))
                     {
                         MailRecipient::create([
@@ -114,11 +115,11 @@ class MailController extends Controller
                             'inactive' => 0
                         ]);
                     } else {
-                        if ($mailing_list_known->character_id !== $character_id) {
-                            MailRecipient::where('recipient_id', $mailing_list->mailing_list_id)->update([
-                                'recipient_name' => $mailing_list->name
-                            ]);
-                        }
+                        MailRecipient::where('recipient_id', $mailing_list->mailing_list_id)->update([
+                            'recipient_name' => $mailing_list->name,
+                            'recipient_type' => "mailing_list",
+                            'inactive' => 0
+                        ]);
                         // MailRecipient::where(['recipient_id' => $mailing_list->mailing_list_id, 'character_id' => $character_id])->update([
                         //     'inactive' => 1
                         // ]);
