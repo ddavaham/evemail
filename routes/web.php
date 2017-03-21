@@ -24,7 +24,7 @@ Route::get('/login', 'AuthController@index')->name('login');
 Route::get('/logout', 'AuthController@logout')->name('logout');
 Route::get('/callback', 'AuthController@callback')->name('callback');
 
-Route::group(['middleware' => ['auth', 'auth.new']], function () {
+Route::group(['middleware' => ['auth', 'general']], function () {
     Route::get('/dashboard/{label_id?}', 'PageController@dashboard')->name('dashboard')->where('label_id', "[0-9]+");
     Route::get('/dashboard/{label_id}/multiedit', 'PageController@multiedit')->name('dashboard.multiedit')->where('label_id', "[0-9]+");
     Route::post('/dashboard/{label_id}/multiedit', 'PageController@multiedit')->name('dashboard.multiedit.post')->where('label_id', "[0-9]+");

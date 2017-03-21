@@ -51,10 +51,6 @@ class PageController extends Controller
 
     public function dashboard ($label = null)
     {
-        if (Auth::user()->is_new) {
-            return redirect()->route('dashboard.welcome');
-        }
-
         if ($this->request->session()->has('mail') || $this->request->session()->has('recipients')) {
             $this->request->session()->forget('mail');
             $this->request->session()->forget('recipients');
@@ -80,10 +76,6 @@ class PageController extends Controller
     }
     public function multiedit ($label)
     {
-        if (Auth::user()->is_new) {
-            return redirect()->route('dashboard.welcome');
-        }
-
         if ($this->request->isMethod('post')) {
             if ($this->request->get('action') === "read") {
                 $mail_ids = $this->request->get('multiedit');
@@ -139,8 +131,6 @@ class PageController extends Controller
 
     public function dashboard_welcome()
     {
-        (!Auth::user()->is_new) ? redirect()->route('dashboard') : null;
-
         if ($this->request->isMethod('post')) {
             $mail_labels = $this->mail->get_character_mail_labels(Auth::user()->character_id);
             if ($mail_labels instanceof Token) {
