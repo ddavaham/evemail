@@ -20,7 +20,7 @@ class PurgeOldMailBodies extends Command
      *
      * @var string
      */
-    protected $description = 'Purges Mails older than 12 hours from the system';
+    protected $description = 'Purges Mails older than 1 hour from the system';
 
     /**
      * Create a new command instance.

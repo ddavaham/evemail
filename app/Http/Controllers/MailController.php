@@ -291,14 +291,16 @@ class MailController extends Controller
         return false;
     }
 
-    public function send_message($character_id, $message_payload)
+    public function send_message($character_id, $message_payload, Carbon $delay=null)
     {
         $token = $this->token->get_token($character_id);
         if ($token->disabled) {
             return $token;
         }
-        $job = (new PostCharacterMail($character_id, $message_payload))
-                ->delay(Carbon::now()->addSeconds(5));
+        $job = (new PostCharacterMail($character_id, $message_payload));
+        if (!is_null($delay)) {
+            $job->delay($delay);
+        }
         dispatch($job);
         return true;
 
@@ -328,22 +330,20 @@ class MailController extends Controller
         if ($token->disabled) {
             return false;
         }
-        $data = [
-            "read" => false
-        ];
         MailHeader::where(['character_id' => $character_id, 'mail_id' => $mail_id])->update([
             'is_read'=> 0
         ]);
+        $data = [
+            "read" => false
+        ];
         $job = (new UpdateMetaData($token, $mail_id, $data))
                 ->delay(Carbon::now()->addSeconds(5));
         dispatch($job);
         return true;
-
     }
 
     public function delete_mail ($character_id, $mail_id)
     {
-
         $token = $this->token->get_token($character_id);
         if ($token->disabled) {
             return false;
@@ -356,7 +356,6 @@ class MailController extends Controller
             return true;
         }
         return false;
-
     }
 
     public function check_for_unknown_headers ($character_id) {

@@ -255,10 +255,4 @@ class HTTPController extends Controller
         $this->http_logger($token->character_id, $curl_request, $payload);
         return $curl_request;
     }
-
-
-
-
-
-
 }

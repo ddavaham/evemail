@@ -29,8 +29,8 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('mail:update_headers')->everyMinute();
         $schedule->command('mail:process_queue')->everyMinute();
-        $schedule->command('mail:purge_disabled_tokens')->everyMinute();
         $schedule->command('mail:purge_old_mails')->hourly();
+        $schedule->command('mail:purge_disabled_tokens')->hourly();
     }
 
     /**
