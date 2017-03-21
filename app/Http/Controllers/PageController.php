@@ -6,6 +6,7 @@ use DB;
 use Validator;
 use Session;
 use Curl\Curl;
+use EVEMail\User;
 use EVEMail\Token;
 use EVEMail\Queue;
 use EVEMail\MailHeader;
