@@ -29,14 +29,14 @@
 
                 </h2>
 
-                <div class="list-group">
+                <ul class="list-group">
                     @if ($mail_headers->count() == 0)
 
                         <a href="#" class="list-group-item text-center">You don't have any mail in this mailbox.</a>
                     @else
                         <form action="{{ route('dashboard.multiedit.post', ['label_id' => $label_id]) }}" method="post">
                             @foreach ($mail_headers as $header)
-                                <a href="{{ route('mail', ['mail_id' => $header->mail_id]) }}" class="list-group-item @if (!$header->is_read) list-group-item-info @endif">
+                                <li class="list-group-item @if (!$header->is_read) list-group-item-info @endif">
                                     <div class="row">
                                         <div class="col-md-1 hidden-xs hidden-sm">
                                             <img src="{{ config('services.eve.img_serv') }}/Character/{{ $header->mail_sender }}_64.jpg" class="img-responsive img-rounded center-block" alt="Portriat of Something"  />
@@ -55,7 +55,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                </a>
+                                </li>
                             @endforeach
                             <li class="list-group-item">
                                 {{ csrf_field() }}
@@ -70,7 +70,7 @@
                             </li>
                         </form>
                     @endif
-                </div>
+                </ul>
 
 
 

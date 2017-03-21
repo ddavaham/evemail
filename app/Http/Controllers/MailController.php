@@ -15,6 +15,7 @@ use EVEMail\MailRecipient;
 use EVEMail\CharacterContact;
 use EVEMail\MailHeaderUpdate;
 use EVEMail\Jobs\ProcessQueue;
+use EVEMail\Jobs\DeleteMailJob;
 use EVEMail\Jobs\UpdateMetaData;
 use EVEMail\Jobs\PostCharacterMail;
 use Illuminate\Support\Facades\Auth;
@@ -306,7 +307,7 @@ class MailController extends Controller
 
     }
 
-    public function mark_mail_read($character_id, $mail_id)
+    public function mark_mail_read($character_id, $mail_id, Carbon $delay=null)
     {
         $token = $this->token->get_token($character_id);
         if ($token->disabled) {
@@ -318,13 +319,15 @@ class MailController extends Controller
         $data = [
             "read" => true
         ];
-        $job = (new UpdateMetaData($token, $mail_id, $data))
-                ->delay(Carbon::now()->addSeconds(5));
+        $job = (new UpdateMetaData($token, $mail_id, $data));
+        if (!is_null($delay)) {
+            $job->delay($delay);
+        }
         dispatch($job);
         return true;
     }
 
-    public function mark_mail_unread($character_id, $mail_id)
+    public function mark_mail_unread($character_id, $mail_id, Carbon $delay=null)
     {
         $token = $this->token->get_token($character_id);
         if ($token->disabled) {
@@ -336,26 +339,26 @@ class MailController extends Controller
         $data = [
             "read" => false
         ];
-        $job = (new UpdateMetaData($token, $mail_id, $data))
-                ->delay(Carbon::now()->addSeconds(5));
+        $job = (new UpdateMetaData($token, $mail_id, $data));
+        if (!is_null($delay)) {
+            $job->delay($delay);
+        }
         dispatch($job);
         return true;
     }
 
-    public function delete_mail ($character_id, $mail_id)
+    public function delete_mail ($character_id, $mail_id, Carbon $delay=null)
     {
         $token = $this->token->get_token($character_id);
         if ($token->disabled) {
-            return false;
+            return $token;
         }
-        $delete_mail_header = $this->http->delete_mail_header($token, $mail_id);
-        if ($delete_mail_header->httpStatusCode == 204) {
-            MailHeader::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
-            MailBody::where(['character_id' => $token->character_id, 'mail_id' => $mail_id])->delete();
-
-            return true;
+        $job = (new DeleteMailJob($character_id, $mail_id));
+        if (!is_null($delay)) {
+            $job->delay($delay);
         }
-        return false;
+        dispatch($job);
+        return true;
     }
 
     public function check_for_unknown_headers ($character_id) {

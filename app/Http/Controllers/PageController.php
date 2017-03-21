@@ -87,19 +87,24 @@ class PageController extends Controller
             if ($this->request->get('action') === "read") {
                 $mail_ids = $this->request->get('multiedit');
                 $mail_headers = MailHeader::where('character_id', Auth::user()->character_id)->whereIn('mail_id', $mail_ids)->get();
+                $now = Carbon::now();
                 foreach ($mail_headers as $header) {
+                    $now = $now->addSeconds(3);
                     if ($header->is_read) {
-                        $this->mail->mark_mail_unread($header->character_id, $header->mail_id);
+                        $this->mail->mark_mail_unread($header->character_id, $header->mail_id, $now);
                     }
                     if (!$header->is_read) {
-                        $this->mail->mark_mail_read($header->character_id, $header->mail_id);
+                        $this->mail->mark_mail_read($header->character_id, $header->mail_id, $now);
                     }
                 }
+                $this->update_label_unread_counter(Auth::user()->character_id, null, "sync");
                 return redirect()->route('dashboard.multiedit', ['label_id' => $label]);
             }
             if ($this->request->get('action') === "delete") {
+                $now = Carbon::now();
                 foreach ($this->request->get('multiedit') as $item) {
-                    $this->mail->delete_mail(Auth::user()->character_id, $item);
+                    $now = $now->addSeconds(3);
+                    $this->mail->delete_mail(Auth::user()->character_id, $item, $now);
                 }
                 $this->request->session()->flash('alert', [
                     'header' => "Delete Queued Successfully",
@@ -107,6 +112,7 @@ class PageController extends Controller
                     'type' => "info",
                     'close' => 1
                 ]);
+                $this->update_label_unread_counter(Auth::user()->character_id, null, "sync");
                 return redirect()->route('dashboard.multiedit', ['label_id' => $label]);
             }
         }
@@ -195,7 +201,6 @@ class PageController extends Controller
                         'type' => 'info',
                         'close' => 1
                     ]);
-                    dd($mail_headers);
                     return redirect()->route('dashboard.welcome');
                 }
             }

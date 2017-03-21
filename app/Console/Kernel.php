@@ -16,7 +16,8 @@ class Kernel extends ConsoleKernel
         "EVEMail\Console\Commands\MailHeaderUpdater",
         "EVEMail\Console\Commands\PurgeOldMailBodies",
         "EVEMail\Console\Commands\ProcessQueue",
-        "EVEMail\Console\Commands\PurgeDisabledTokens"
+        "EVEMail\Console\Commands\PurgeDisabledTokens",
+        "EVEMail\Console\Commands\PurgeNewAccounts"
     ];
 
     /**
@@ -27,10 +28,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('mail:update_headers')->everyMinute();
+        //Dont run this command during daily downtime. This will prevent our database filling up with a few hundred error messages
+        $schedule->command('mail:update_headers')->everyMinute()->unlessBetween('11:00', '11:30');
         $schedule->command('mail:process_queue')->everyMinute();
         $schedule->command('mail:purge_old_mails')->hourly();
         $schedule->command('mail:purge_disabled_tokens')->hourly();
+        //Runt this Command During Downtime.
+        $schedule->command('mail:purge_new_accounts')->dailyAt('11:05');
     }
 
     /**
