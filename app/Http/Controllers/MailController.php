@@ -376,11 +376,14 @@ class MailController extends Controller
         }
 
         $mail_headers = MailHeader::where([
-            'character_id' => $user->character_id,
-            'is_known' => 0,
-            'is_read' => 0
-        ])->orderby('created_at', 'desc');
+            'mail_header.character_id' => $user->character_id,
+            'mail_header.is_known' => 0,
+            'mail_header.is_read' => 0
+        ])
+        ->leftJoin('mail_recipient', 'mail_header.mail_sender', '=','mail_recipient.recipient_id')
+        ->orderby('mail_header.created_at', 'desc');
         $get_mail_headers = $mail_headers->get();
+
 
         if ($get_mail_headers->count() > 0 ) {
             foreach ($get_mail_headers as $k=>$header) {
@@ -392,8 +395,12 @@ class MailController extends Controller
                 }
             }
             Mail::to($user->email()->first()->character_email)->send(new NewMailNotification($user, $get_mail_headers));
-            $mail_headers->update([
-                'is_known' => 1
+            MailHeader::where([
+                'mail_header.character_id' => $user->character_id,
+                'mail_header.is_known' => 0,
+                'mail_header.is_read' => 0
+            ])->update([
+                'mail_header.is_known' => 1
             ]);
         }
     }
