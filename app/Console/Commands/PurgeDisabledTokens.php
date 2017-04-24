@@ -60,7 +60,7 @@ class PurgeDisabledTokens extends Command
                     ],
                 ],
                 'subject' => "EVEMail Alert: Your Account has been disabled",
-                'body' => "Hello {$user->character_name},<br /><br />This is just a friend EVEMail from EVEMail.Space. We wanted to inform you that our system disabled your SSO Token. This was probably due to an invalid response that we got from CCP while attempting to update your inbox. In the event that this was not suppose to happen, it can be quickly reactivated and service resumed by logging into the application at anytime.<br /><br /><a href=\"https://www.evemail.space\">EVEMail.Space</a><br /><br />Thank You,<br />EVEMail Admin<br /><br />**This was an automated EVEMail sent by the EVEMail.Space System.**",
+                'body' => "Hello {$user->character_name},<br /><br />This is just a friendly EVEMail from EVEMail.Space. We wanted to inform you that our system has disabled your SSO Token. This is probably due to an invalid response that we received from CCP while attempting to update your inbox on our system. In the event that this was not suppose to happen, you can quickly reactivate your token and service be resumed by logging into the application at anytime.<br /><br /><a href=\"https://www.evemail.space\">EVEMail.Space</a><br /><br />Thank You,<br />EVEMail Admin<br /><br />**This was an automated EVEMail sent by the EVEMail.Space System.**",
                 'approved_cost' => 100000
             ];
             $this->mail->send_message(config('services.eve.evemail_admin_char_id'), $payload, $now);
