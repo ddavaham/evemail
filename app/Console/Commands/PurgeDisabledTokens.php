@@ -54,8 +54,10 @@ class PurgeDisabledTokens extends Command
             $user = User::where('character_id', $token->character_id)->first();
             $payload = [
                 'recipients' => [
-                    ['recipient_id' => $user->character_id,
-                    'recipient_type' => "character"],
+                    [
+                        'recipient_id' => $user->character_id,
+                        'recipient_type' => "character"
+                    ],
                 ],
                 'subject' => "EVEMail Alert: Your Account has been disabled",
                 'body' => "Hello {$user->character_name},<br /><br />This is just a friend EVEMail from EVEMail.Space. We wanted to inform you that our system disabled your SSO Token. This was probably due to an invalid response that we got from CCP while attempting to update your inbox. In the event that this was not suppose to happen, it can be quickly reactivated and service resumed by logging into the application at anytime.<br /><br /><a href=\"https://www.evemail.space\">EVEMail.Space</a><br /><br />Thank You,<br />EVEMail Admin<br /><br />**This was an automated EVEMail sent by the EVEMail.Space System.**",

@@ -1,6 +1,6 @@
 <p>
     Hey there {{ $user->character_name }},<br /><br />
-     Thank you for submitting your email address to the EVEMail System. Doing so has opened the door to a plethora of features that the EVEMail system offers. Before you get started though, please verify this email address by clicking on the button below.
+     Thank you for submitting your email address to the EVEMail System. Doing so has opened the door to a plethora of features that the EVEMail system offers. Before you get started though, please verify this email address by clicking on the link below.
 </p>
 <p>
      <a href="{{ route('settings.email.action', ['action' => 'verify', 'vCode' => $user->email()->first()->email_verification_code]) }}" target="_blank">Verify My Email Address</a>

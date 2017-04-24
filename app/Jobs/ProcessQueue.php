@@ -46,11 +46,15 @@ class ProcessQueue implements ShouldQueue
 
             if ($parse_ids->httpStatusCode == 200) {
                 foreach ($parse_ids->response as $parsed_id) {
-                    MailRecipient::create([
-                        'recipient_id' => $parsed_id->id,
-                        'recipient_name' => $parsed_id->name,
-                        'recipient_type' => $parsed_id->category
-                    ]);
+                    //One Last Check
+                    $exists = MailRecipient::where('recipient_id', $parsed_id->id)->count();
+                    if ($exists == 0) {
+                        MailRecipient::create([
+                            'recipient_id' => $parsed_id->id,
+                            'recipient_name' => $parsed_id->name,
+                            'recipient_type' => $parsed_id->category
+                        ]);
+                    }
                     Queue::where('queue_id', $parsed_id->id)->delete();
                 }
             }

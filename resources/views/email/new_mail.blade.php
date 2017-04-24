@@ -28,7 +28,7 @@
               </tr>
               @foreach ($mail_headers as $header)
                   <tr>
-                    <td class="tg-yw4l" style="font-family:Arial, sans-serif; font-size:14px; padding:15px 10px; border-style:solid; border-width:1px; overflow:hidden; word-break:normal; border-color:#ccc; color:#333; background-color:#fff; vertical-align:top" bgcolor="#fff">{{ $header->sender()->first()->recipient_name }}</td>
+                    <td class="tg-yw4l" style="font-family:Arial, sans-serif; font-size:14px; padding:15px 10px; border-style:solid; border-width:1px; overflow:hidden; word-break:normal; border-color:#ccc; color:#333; background-color:#fff; vertical-align:top" bgcolor="#fff">{{ $header->recipient_name }}</td>
                     <td class="tg-yw4l" style="font-family:Arial, sans-serif; font-size:14px; padding:15px 10px; border-style:solid; border-width:1px; overflow:hidden; word-break:normal; border-color:#ccc; color:#333; background-color:#fff; vertical-align:top" bgcolor="#fff">{{ $header->mail_subject }}</td>
                     <td class="tg-lqy6" style="font-family:Arial, sans-serif; font-size:14px; padding:15px 10px; border-style:solid; border-width:1px; overflow:hidden; word-break:normal; border-color:#ccc; color:#333; background-color:#fff; text-align:right; vertical-align:top" bgcolor="#fff" align="right">{{ \Carbon\Carbon::createFromTimestamp(strtotime($header->mail_sent_date))->toDayDateTimeString() }}</td>
                   </tr>

@@ -46,7 +46,5 @@ class ProcessQueue extends Command
                     ->delay(Carbon::now()->addSeconds(5));
             dispatch($job);
         }
-
-
     }
 }
