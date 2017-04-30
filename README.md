@@ -1,3 +1,5 @@
+# As of April 30th, 2017, the site officially shut down. This repo is no longer maintained, but you are more than free to clone the repo and launch your own project.
+
 # EVEMail. The Web Mail Client for the EVE Online Universe
 
 What if I told you that you could send EVEMails without being in game?
