@@ -1,0 +1,40 @@
+Yeah, so I have been mulling this over and I can't remember 100% how to set it up. I am working on another project that I will be integrating this project into so I will figure it out then, but this is a rough run down
+
+**Requirements**
+- PHP 5.6+
+- MySQL
+- Supervisor
+- Laravel (Included)
+- Composer
+- Git
+
+1. SSH into ya server
+2. Clone the repo
+3. Run Composer
+4. Copy the .env.example file and rename the COPY to just .env
+5. From the console run `php artisan key:generate`
+6. Open the file .env
+7. Go to [MailGun ](https://mailgun.com)and Create an Account.
+ - You can replace this if you want. I am not sure if the code will break without this, just do not approve notifications on the account without the next few step having been completed.
+8. Retrieve your API Credentials from the [Dashboard](http://i.imgur.com/0d2XzHA.png)
+
+9. Enter the credentials and domain in .env file
+
+- Side note. I used reply.evemail.space when I created the application because the main domain, evemail.space, already had the MX recordeds to receive regular mail. I never go around to coding the reply via email feature because I realized how impractical it would be, but not impossible.
+
+10. Go to the [EVE:Developers site](https://developers.eveonline.com/) and create an application and with all the scopes selected, don't worry I don't use them and it does not matter to the outside world if you have all of them selected. What matters is which scope you request when the user authenticates with the SSO
+
+11. With the application created copy the credentials into the .env folder
+
+12. Back to the .env file, create a database on your MySQL Server and enter the details in the .env file
+
+13. Set the APP_URL to the URL of your site
+
+14. From the console, run `php artisan migrate`
+
+15. Follow this guide from DO to get familiar with [Supervisor](https://www.digitalocean.com/community/tutorials/how-to-install-and-manage-supervisor-on-ubuntu-and-debian-vps)
+- Unfortunately I never saved the command that I had Supervisor run. I do remember that was php artisan queue:listen and that I had a few arguments on the end of it to manage the behavior of the queue, unfortunately I do not have them and I never documented them. I will have to figure those out again here soon.
+
+16. Log into the site, go through the setup. Send yourself a mail from in game or somewhere else and make sure that the system detects the mail and downloads it. Also try sending a mail from the applications
+
+On a side note, the application will crash if Ubuntu permissions are not configured correctly so that it can write the log files. Gud luk!
